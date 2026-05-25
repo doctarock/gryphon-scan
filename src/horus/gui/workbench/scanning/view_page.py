@@ -55,7 +55,7 @@ class ViewPage(wx.SplitterWindow):
         self.video_view.Bind(wx.EVT_SHOW, self.on_show)
 
     def on_show(self, event):
-        if event.GetShow():
+        if event.IsShown():
             if driver.is_connected and profile.settings['workbench'] == 'scanning':
                 self.video_view.play()
         else:

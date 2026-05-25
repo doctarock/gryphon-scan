@@ -48,7 +48,7 @@ class Page(wx.Panel):
                  wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT, 8)
         hbox.Add((0, 0), 1, wx.EXPAND)
         hbox.Add(self.right_button, 0, wx.ALL | wx.EXPAND |
-                 wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT, 8)
+                 wx.ALIGN_CENTER_VERTICAL, 8)
         button_panel.SetSizer(hbox)
         self.SetSizer(vbox)
         self.Layout()

@@ -61,7 +61,7 @@ class CurrentVideo(object):
                 corners = image_detection.detect_corners(image)
 #                image_capture.flush_laser(14)
                 images = image_capture.capture_lasers()
-                for i in xrange(2):
+                for i in range(2):
                     images[i] = image_detection.pattern_mask(images[i], corners)
                     if self.draw_line:
                         (u, v), images[i] = laser_segmentation.compute_2d_points(images[i])
@@ -72,7 +72,7 @@ class CurrentVideo(object):
                         images[i] = cv2.cvtColor(images[i], cv2.COLOR_GRAY2RGB)
             else:
                 images = image_capture.capture_lasers()
-                for i in xrange(2):
+                for i in range(2):
                     if self.draw_line:
                         (u, v), images[i] = laser_segmentation.compute_2d_points(images[i])
                         images[i] = cv2.cvtColor(images[i], cv2.COLOR_GRAY2RGB)

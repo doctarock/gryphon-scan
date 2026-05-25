@@ -43,14 +43,14 @@ class PatternSettingsPages(wx.Panel):
         hbox.Add(self.info_panel, 1, wx.ALL | wx.EXPAND, 3)
         hbox.Add(self.video_view, 1, wx.ALL | wx.EXPAND, 3)
 
-	self.add_info(_("1) Pattern size is the number of inner \"cross\" points "
-                             "of the pattern"), "pattern-size.jpg")
+        self.add_info(_("1) Pattern size is the number of inner \"cross\" points "
+                        "of the pattern"), "pattern-size.jpg")
 
-	self.add_info(_("2) Origin distance is the distance from lower set of  \"cross\" points "
-                             "to the platform"), "pattern-distance.jpg")
+        self.add_info(_("2) Origin distance is the distance from lower set of  \"cross\" points "
+                        "to the platform"), "pattern-distance.jpg")
 
-	self.add_info(_("3) Pattern border is the clean white space around chessboard pattern."
-                             "\nThis white space is used for lasers calibration"), "")
+        self.add_info(_("3) Pattern border is the clean white space around chessboard pattern."
+                        "\nThis white space is used for lasers calibration"), "")
 
         self.Layout()
 

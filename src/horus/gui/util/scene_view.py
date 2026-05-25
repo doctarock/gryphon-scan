@@ -69,7 +69,7 @@ class SceneView(opengl_gui.glGuiPanel):
         self.update_profile_to_controls()
 
     def on_show(self, event):
-        if event.GetShow():
+        if event.IsShown():
             self.GetParent().Layout()
             self.Layout()
 
@@ -648,7 +648,7 @@ class SceneView(opengl_gui.glGuiPanel):
 
             # Draw the sides of the build volume.
             glBegin(GL_QUADS)
-            for n in xrange(0, len(polys[0])):
+            for n in range(0, len(polys[0])):
                 if machine_shape == 'Rectangular':
                     if n % 2 == 0:
                         glColor4ub(5, 171, 231, 96)

@@ -37,7 +37,7 @@ class VideoPage(Page):
         # Elements
         self.video_view = VideoView(self.panel, self.get_image)
 
-        self.info_panel = wx.Panel(self)
+        self.info_panel = wx.Panel(self.panel)
         title_text = wx.StaticText(self.info_panel, label=title)
         title_font = title_text.GetFont()
         title_font.SetWeight(wx.BOLD)

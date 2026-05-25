@@ -174,7 +174,7 @@ class LaserSegmentation(object):
                 _min = peak - self.window_value
                 _max = peak + self.window_value + 1
                 mask = np.zeros_like(image)
-                for i in xrange(self.calibration_data.height):
+                for i in range(self.calibration_data.height):
                     mask[i, _min[i]:_max[i]] = 255
                 # Apply mask
                 image = cv2.bitwise_and(image, mask)
@@ -264,7 +264,7 @@ class LaserSegmentation(object):
         best_inlier_num = 0
         best_inliers = None
         data_idx = np.arange(data.shape[0])
-        for _ in xrange(max_trials):
+        for _ in range(max_trials):
             sample = data[np.random.randint(0, data.shape[0], 2)]
             if model_class.is_degenerate(sample):
                 continue

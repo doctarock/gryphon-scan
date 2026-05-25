@@ -71,7 +71,7 @@ class ConnectionPage(WizardPage):
         self.update_status(driver.is_connected)
 
     def on_show(self, event):
-        if event.GetShow():
+        if event.IsShown():
             driver.board.lasers_off()
             self.update_status(driver.is_connected)
         else:
@@ -104,7 +104,7 @@ class ConnectionPage(WizardPage):
             current_video_id = profile.settings['camera_id']
             if len(video_list) > 0:
                 if current_video_id not in video_list:
-                    profile.settings['camera_id'] = unicode(video_list[0])
+                    profile.settings['camera_id'] = str(video_list[0])
                     driver.camera.camera_id = int(profile.settings['camera_id'][-1:])
 
             driver.set_callbacks(
@@ -225,7 +225,7 @@ class ConnectionPage(WizardPage):
         self.Layout()
 
     def progress_auto_check(self, progress):
-        self.gauge.SetValue(progress)
+        self.gauge.SetValue(int(round(progress)))
 
     def after_auto_check(self, response):
         ret, result = response

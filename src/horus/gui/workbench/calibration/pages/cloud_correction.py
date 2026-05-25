@@ -32,9 +32,9 @@ class CloudCorrectionPages(wx.Panel):
 
         self.video_page = VideoPage(self, title=_('Cloud correction'),
                                     start_callback=self.on_start, cancel_callback=self.on_exit)
-	self.video_page.add_info(_("Estimate point cloud compensation."), "")
-	self.video_page.add_info(_("Put the pattern on the platform as shown in the "
-                             "picture and press \"Start\""), "pattern-position.png")
+        self.video_page.add_info(_("Estimate point cloud compensation."), "")
+        self.video_page.add_info(_("Put the pattern on the platform as shown in the "
+                                   "picture and press \"Start\""), "pattern-position.png")
 
         self.result_page = ResultPage(self, exit_callback=self.on_exit)
 
@@ -72,7 +72,7 @@ class CloudCorrectionPages(wx.Panel):
             self.wait_cursor = wx.BusyCursor()
 
     def progress_calibration(self, progress):
-        self.video_page.gauge.SetValue(progress)
+        self.video_page.gauge.SetValue(int(round(progress)))
 
     def after_calibration(self, response):
         ret, result = response
@@ -186,7 +186,7 @@ class ResultPage(Page):
                             "Also you can set up the calibration's settings "
                             "in the \"Adjustment workbench\" until the pattern "
                             "are detected correctly at all required platform angles"),
-                    _(result), wx.OK | wx.ICON_ERROR)
+                    str(_(result)), wx.OK | wx.ICON_ERROR)
                 dlg.ShowModal()
                 dlg.Destroy()
 
@@ -202,7 +202,8 @@ class CloudCorrection3DPlot(wx.Panel):
         fig = Figure(facecolor=(0.7490196, 0.7490196, 0.7490196, 1), tight_layout=True)
         self.canvas = FigureCanvasWxAgg(self, -1, fig)
         self.canvas.SetExtraStyle(wx.EXPAND)
-        self.ax = fig.gca(projection='3d', axisbg=(0.7490196, 0.7490196, 0.7490196, 1))
+        self.ax = fig.add_subplot(111, projection='3d')
+        self.ax.set_facecolor((0.7490196, 0.7490196, 0.7490196, 1))
 
         self.Bind(wx.EVT_SIZE, self.onSize)
         self.Layout()

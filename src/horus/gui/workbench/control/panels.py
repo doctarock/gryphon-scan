@@ -123,12 +123,12 @@ class LDRSection(ControlPanel):
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(self.ldr_buttons[0], 0, wx.ALIGN_CENTER_VERTICAL)
         hbox.AddStretchSpacer()
-        hbox.Add(self.ldr_labels[0], 1, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        hbox.Add(self.ldr_labels[0], 1, wx.ALIGN_CENTER_VERTICAL)
         vbox.Add(hbox, 0, wx.TOP | wx.BOTTOM | wx.EXPAND, 5)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(self.ldr_buttons[1], 0, wx.ALIGN_CENTER_VERTICAL)
         hbox.AddStretchSpacer()
-        hbox.Add(self.ldr_labels[1], 1, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        hbox.Add(self.ldr_labels[1], 1, wx.ALIGN_CENTER_VERTICAL)
         vbox.Add(hbox, 0, wx.TOP | wx.BOTTOM | wx.EXPAND, 5)
         self.SetSizer(vbox)
         self.Layout()
@@ -217,14 +217,14 @@ class GcodeSection(ControlPanel):
         vbox = wx.BoxSizer(wx.VERTICAL)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(self.request, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
-        hbox.Add(self.control, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        hbox.Add(self.control, 0, wx.ALIGN_CENTER_VERTICAL)
         vbox.Add(hbox, 0, wx.EXPAND)
         vbox.Add(self.response, 1, wx.TOP | wx.BOTTOM | wx.EXPAND, 8)
         self.SetSizer(vbox)
         self.Layout()
 
         # Events
-        self.request.Bind(wx.wx.EVT_KEY_DOWN, self.on_key_pressed)
+        self.request.Bind(wx.EVT_KEY_DOWN, self.on_key_pressed)
         self.control.Bind(wx.EVT_BUTTON, self.on_button_clicked)
 
     def on_key_pressed(self, event):

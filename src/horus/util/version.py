@@ -7,7 +7,7 @@ __copyright__ = 'Copyright (C) 2014-2016 Mundo Reader S.L.\
 __license__ = 'GNU General Public License v2 http://www.gnu.org/licenses/gpl2.html'
 
 import json
-import urllib2
+import urllib.request as urllib2
 import webbrowser
 
 from horus import __version__, __datetime__, __commit__

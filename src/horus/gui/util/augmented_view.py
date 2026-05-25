@@ -20,6 +20,17 @@ import horus.gui.engine
 platform_points = None
 platform_border = None
 
+def _finite_points(points):
+    return points is not None and np.all(np.isfinite(points))
+
+def _project_points(points, rvec, tvec, camera_matrix, distortion_vector):
+    try:
+        projected, _ = cv2.projectPoints(
+            np.float32(points), rvec, tvec, camera_matrix, distortion_vector)
+    except cv2.error:
+        return None
+    return projected if _finite_points(projected) else None
+
 def init_platform_augmented_draw():
     global platform_points
     global platform_border
@@ -52,20 +63,24 @@ def augmented_draw_platform(image):
 
         calibration_data = horus.gui.engine.platform_extrinsics.calibration_data
         # platform border
-        p, jac = cv2.projectPoints(platform_border, \
+        p = _project_points(platform_border, \
             calibration_data.platform_rotation, \
             calibration_data.platform_translation, \
             calibration_data.camera_matrix, \
             calibration_data.distortion_vector)
+        if p is None:
+            return
         p = np.int32([p])
         cv2.polylines(image, p, True, (0,255,0), 2)
 
         # marker positions
-        p, jac = cv2.projectPoints(platform_points, \
+        p = _project_points(platform_points, \
             calibration_data.platform_rotation, \
             calibration_data.platform_translation, \
             calibration_data.camera_matrix, \
             calibration_data.distortion_vector)
+        if p is None:
+            return
         p = np.int32(p).reshape(-1,2)
         for pp in p:
             cv2.circle(image, tuple(pp), 5, (0,0,255), -1)
@@ -87,11 +102,13 @@ def augmented_platform_mask(image):
 
         calibration_data = horus.gui.engine.platform_extrinsics.calibration_data
         # platform border
-        p, jac = cv2.projectPoints(platform_border, \
+        p = _project_points(platform_border, \
             calibration_data.platform_rotation, \
             calibration_data.platform_translation, \
             calibration_data.camera_matrix, \
             calibration_data.distortion_vector)
+        if p is None:
+            return mask
         p = np.int32([p])
         cv2.fillPoly(mask, p, 0)
     return mask
@@ -106,6 +123,8 @@ def augmented_draw_pattern(image, corners):
             image, (horus.gui.engine.pattern.columns, horus.gui.engine.pattern.rows), corners, True)
 
         pose = horus.gui.engine.image_detection.detect_pose_from_corners(corners)
+        if pose is None:
+            return image
         l = -horus.gui.engine.pattern.square_width
         t = -horus.gui.engine.pattern.square_width
         r = horus.gui.engine.pattern.square_width * horus.gui.engine.pattern.columns
@@ -122,11 +141,13 @@ def augmented_draw_pattern(image, corners):
             (l-wl,b-horus.gui.engine.pattern.square_width+horus.gui.engine.pattern.origin_distance,0),(r+wr,b-horus.gui.engine.pattern.square_width+horus.gui.engine.pattern.origin_distance,0),
             (l,b,0),(l,b,-50)
             ) )
-        p, jac = cv2.projectPoints(points, \
+        p = _project_points(points, \
             pose[0], \
             pose[1].T[0], \
             calibration_data.camera_matrix, \
             calibration_data.distortion_vector)
+        if p is None:
+            return image
         p = np.int32(p).reshape(-1,2)
         cv2.polylines(image, np.int32([p[0:4]]), True, (0,255,0), 2)
         cv2.polylines(image, np.int32([p[4:8]]), True, (255,0,0), 2)
@@ -144,6 +165,8 @@ def augmented_pattern_mask(image, corners):
     mask = np.zeros(image.shape[0:2], dtype = "uint8")
     if corners is not None:
         pose = horus.gui.engine.image_detection.detect_pose_from_corners(corners)
+        if pose is None:
+            return mask
         l = -horus.gui.engine.pattern.square_width
         t = -horus.gui.engine.pattern.square_width
         r = horus.gui.engine.pattern.square_width * horus.gui.engine.pattern.columns
@@ -157,11 +180,13 @@ def augmented_pattern_mask(image, corners):
         points = np.float32( (
             (l-wl,t-wt,0),(r+wr,t-wt,0),(r+wr,b+wb,0),(l-wl,b+wb,0),
             ) )
-        p, jac = cv2.projectPoints(points, \
+        p = _project_points(points, \
             pose[0], \
             pose[1].T[0], \
             calibration_data.camera_matrix, \
             calibration_data.distortion_vector)
+        if p is None:
+            return mask
         p = np.int32(p).reshape(-1,2)
 
         cv2.fillConvexPoly(mask, np.int32([p]), 255)
@@ -186,11 +211,13 @@ def augmented_draw_lasers_on_platform(image):
                         profile.settings['machine_diameter']/2 )
 
                     points = np.float32([p1, p2])
-                    p, jac = cv2.projectPoints(points,
+                    p = _project_points(points,
                         np.identity(3),
                         np.zeros(3),
                         calibration.camera_matrix,
                         calibration.distortion_vector)
+                    if p is None:
+                        continue
                     p = np.int32(p).reshape(-1,2)
                     cv2.line(image, tuple(p[0]), tuple(p[1]), (255,0,0), 2)
 
@@ -226,11 +253,13 @@ def augmented_draw_lasers_on_pattern(image, pose):
             xt = (l_d-pt*l_n[1])/l_n[0]
             xb = (l_d-pb*l_n[1])/l_n[0]
             points = np.float32([ (xt,pt,0),(xb,pb,0) ])
-            p, jac = cv2.projectPoints(points,
+            p = _project_points(points,
                 pose[0],
                 pose[1].T[0],
                 calibration.camera_matrix,
                 calibration.distortion_vector)
+            if p is None:
+                continue
             p = np.int32(p).reshape(-1,2)
             cv2.line(image, tuple(p[0]), tuple(p[1]), (255,0,0), 2)
 

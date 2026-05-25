@@ -148,7 +148,7 @@ class PointCloudColor(ExpandablePanel):
             data = dialog.GetColourData()
             color = data.GetColour().Get()
             ciclop_scan.color = color
-            profile.settings['point_cloud_color'] = unicode("".join(map(chr, color)).encode('hex'))
+            profile.settings['point_cloud_color'] = "".join(f"{c:02x}" for c in color)
         dialog.Destroy()
 
     def on_selected(self):

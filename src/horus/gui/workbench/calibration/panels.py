@@ -25,15 +25,15 @@ class PatternSettings(ExpandablePanel):
 
     def add_controls(self):
         self.add_control(
+            'pattern_origin_distance', FloatTextBox,
+            _("Minimum distance between the origin of the pattern (bottom-left corner) "
+              "and the pattern's base surface (mm)"))
+        self.add_control(
             'pattern_rows', Slider, _("Number of corner rows in the pattern"))
         self.add_control(
             'pattern_columns', Slider, _("Number of corner columns in the pattern"))
         self.add_control(
             'pattern_square_width', FloatTextBox, _("Square width in the pattern (mm)"))
-        self.add_control(
-            'pattern_origin_distance', FloatTextBox,
-            _("Minimum distance between the origin of the pattern (bottom-left corner) "
-              "and the pattern's base surface (mm)"))
 
         self.add_control(
             'pattern_border_l', FloatTextBox, _("Border Left (mm)"))

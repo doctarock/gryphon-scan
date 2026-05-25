@@ -90,7 +90,7 @@ class DirPicker(ControlPanel):
         self.hbox = wx.BoxSizer(wx.HORIZONTAL)
         self.hbox.Add(label, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
         self.hbox.AddStretchSpacer()
-        self.hbox.Add(self.control, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        self.hbox.Add(self.control, 0, wx.ALIGN_CENTER_VERTICAL)
         self.SetSizer(self.hbox)
         self.Layout()
 
@@ -117,7 +117,7 @@ class ColorPicker(ControlPanel):
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(label, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
         hbox.AddStretchSpacer()
-        hbox.Add(self.control, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        hbox.Add(self.control, 0, wx.ALIGN_CENTER_VERTICAL)
         self.SetSizer(hbox)
         self.Layout()
 
@@ -132,8 +132,8 @@ class ColorPicker(ControlPanel):
             self.set_engine(value)
 
     def decode_color(self, value):
-        if isinstance(value, basestring):
-            ret = struct.unpack('BBB', value.decode('hex'))
+        if isinstance(value, str):
+            ret = struct.unpack('BBB', bytes.fromhex(value))
         elif isinstance(value, (tuple,list)) and \
              len(value) == 3 and \
              all(isinstance(x, int) for x in value):
@@ -144,8 +144,8 @@ class ColorPicker(ControlPanel):
 
 
     def update_to_profile(self, value):
-        if issubclass(self.setting._type, basestring):
-            profile.settings[self.name] = unicode("".join(map(chr, value)).encode('hex'))
+        if issubclass(self.setting._type, str):
+            profile.settings[self.name] = "".join(f"{c:02x}" for c in value)
         elif issubclass(self.setting._type, list):
             profile.settings[self.name] = value
         elif issubclass(self.setting._type, tuple):
@@ -154,8 +154,9 @@ class ColorPicker(ControlPanel):
 
     def set_control_value(self, value):
         self.control.SetBackgroundColour(wx.Colour(value[0] & 0xFF, value[1] & 0xFF, value[2] & 0xFF))
-        self.control.SetLabel( "#{0}\n{1} {2} {3}".format("".join(map(chr, value)).encode('hex'), \
-                  value[0] & 0xFF, value[1] & 0xFF, value[2] & 0xFF ) )
+        self.control.SetLabel("#{0}\n{1} {2} {3}".format(
+            "".join(f"{c:02x}" for c in value),
+            value[0] & 0xFF, value[1] & 0xFF, value[2] & 0xFF))
 
     def _on_btn_click(self, event):
         v = self.pick_color()

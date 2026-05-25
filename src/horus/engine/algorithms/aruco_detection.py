@@ -8,8 +8,15 @@ import cv2
 try:
     import cv2.aruco as aruco
     aruco_present = True
+
+    # Check for OpenCV 4.7+ API
+    if hasattr(aruco, 'getPredefinedDictionary'):
+        aruco_version = 'new'  # OpenCV 4.7+
+    else:
+        aruco_version = 'old'  # OpenCV < 4.7
 except ImportError:
     aruco_present = False
+    aruco_version = None
 
 
 import numpy as np
@@ -25,10 +32,25 @@ class ArucoDetection(object):
         if not aruco_present:
             return None
 
-        self.aruco_dict = aruco.Dictionary_get(pattern.aruco_dict)
-        # https://docs.opencv.org/3.4.3/d1/dcd/structcv_1_1aruco_1_1DetectorParameters.html
-        self.aruco_parameters = aruco.DetectorParameters_create()
-        self.aruco_parameters.cornerRefinementMethod = aruco.CORNER_REFINE_APRILTAG # aruco.CORNER_REFINE_SUBPIX
+        # Handle both old and new OpenCV aruco API
+        if aruco_version == 'new':
+            # OpenCV 4.7+ API
+            try:
+                aruco_dict_id = getattr(aruco, pattern.aruco_dict, aruco.getPredefinedDictionary(aruco.DICT_6X6_250))
+                self.aruco_dict = aruco.getPredefinedDictionary(aruco_dict_id)
+                self.aruco_parameters = aruco.DetectorParameters()
+                self.aruco_parameters.cornerRefinementMethod = aruco.CORNER_REFINE_APRILTAG
+                self.detector = aruco.ArucoDetector(self.aruco_dict, self.aruco_parameters)
+            except:
+                # Fallback
+                self.aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_6X6_250)
+                self.aruco_parameters = aruco.DetectorParameters()
+                self.detector = aruco.ArucoDetector(self.aruco_dict, self.aruco_parameters)
+        else:
+            # OpenCV < 4.7 API
+            self.aruco_dict = aruco.Dictionary_get(pattern.aruco_dict)
+            self.aruco_parameters = aruco.DetectorParameters_create()
+            self.aruco_parameters.cornerRefinementMethod = aruco.CORNER_REFINE_APRILTAG
 
 
     def aruco_detect(self, image):
@@ -39,7 +61,13 @@ class ArucoDetection(object):
             return (None, None)
 
         gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, self.aruco_dict, parameters=self.aruco_parameters)
+
+        if aruco_version == 'new':
+            # OpenCV 4.7+ API
+            corners, ids, rejectedImgPoints = self.detector.detectMarkers(gray)
+        else:
+            # OpenCV < 4.7 API
+            corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, self.aruco_dict, parameters=self.aruco_parameters)
 
         return (corners, ids)
 

@@ -7,6 +7,7 @@ __license__ = 'GNU General Public License v2 http://www.gnu.org/licenses/gpl2.ht
 
 import struct
 import wx._core
+import logging
 
 from horus.util import resources, profile
 
@@ -21,6 +22,8 @@ from horus.gui.workbench.scanning.panels import ScanParameters, RotatingPlatform
 from horus.gui.workbench.scanning.gryphon_panels import PointCloudColor, Photogrammetry, \
     MeshCorrection
 
+logger = logging.getLogger(__name__)
+
 
 class ScanningWorkbench(Workbench):
 
@@ -31,13 +34,13 @@ class ScanningWorkbench(Workbench):
         self.toolbar_scan = toolbar_scan
 
         # Elements
-        self.play_tool = self.toolbar_scan.AddLabelTool(
+        self.play_tool = self.toolbar_scan.AddTool(
             wx.NewId(), _("Play"),
             wx.Bitmap(resources.get_path_for_image("play.png")), shortHelp=_("Play"))
-        self.stop_tool = self.toolbar_scan.AddLabelTool(
+        self.stop_tool = self.toolbar_scan.AddTool(
             wx.NewId(), _("Stop"),
             wx.Bitmap(resources.get_path_for_image("stop.png")), shortHelp=_("Stop"))
-        self.pause_tool = self.toolbar_scan.AddLabelTool(
+        self.pause_tool = self.toolbar_scan.AddTool(
             wx.NewId(), _("Pause"),
             wx.Bitmap(resources.get_path_for_image("pause.png")), shortHelp=_("Pause"))
         self.toolbar_scan.Realize()
@@ -130,14 +133,23 @@ class ScanningWorkbench(Workbench):
             return image
 
     def point_cloud_callback(self, range, progress, point_cloud, point_meta):
+        before = 0
+        after = 0
+        if point_cloud is not None and point_cloud[0] is not None:
+            before = point_cloud[0].shape[1]
         point_cloud = point_cloud_roi.mask_point_cloud(*point_cloud)
+        if point_cloud is not None and point_cloud[0] is not None:
+            after = point_cloud[0].shape[1]
+        if before == 0 or after == 0:
+            logger.info("Scan point cloud meta={0}: points {1}->{2}".format(
+                point_meta, before, after))
         wx.CallAfter(self._point_cloud_callback,
                      range, progress, point_cloud, point_meta)
 
     def _point_cloud_callback(self, range, progress, point_cloud, meta):
         if range > 0:
-            self.gauge.SetRange(range)
-            self.gauge.SetValue(progress)
+            self.gauge.SetRange(int(round(range)))
+            self.gauge.SetValue(int(round(progress)))
         if point_cloud is not None:
             (points, texture) = point_cloud
             self.scene_view.append_point_cloud(points, texture, meta = meta)
@@ -228,7 +240,7 @@ class ScanningWorkbench(Workbench):
                 'rotation_matrix', 'translation_vector']
         for n in meta_names:
             obj._mesh.metadata[n] = profile.settings[n]
-        print "Metadata created: {0}".format(obj._mesh.metadata)
+        print("Metadata created: {0}".format(obj._mesh.metadata))
         self.gauge.SetValue(0)
         self.gauge.Show()
         self.scene_panel.Layout()

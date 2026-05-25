@@ -132,7 +132,7 @@ class PreferencesDialog(wx.Dialog):
             hbox = wx.BoxSizer(wx.HORIZONTAL)
             hbox.Add(self.upload_firmware_button, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 10)
             hbox.AddStretchSpacer()
-            hbox.Add(self.clear_check_box, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+            hbox.Add(self.clear_check_box, 0, wx.ALIGN_CENTER_VERTICAL)
             vbox.Add(hbox, 0, wx.ALL | wx.EXPAND, 10)
 
             vbox.Add(self.gauge, 0, wx.EXPAND | wx.ALL ^ wx.TOP, 10)
@@ -166,7 +166,7 @@ class PreferencesDialog(wx.Dialog):
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(label, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 10)
         hbox.AddStretchSpacer()
-        hbox.Add(combo, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        hbox.Add(combo, 0, wx.ALIGN_CENTER_VERTICAL)
         vbox.Add(hbox, 0, wx.ALL | wx.EXPAND, 10)
 
     def on_hex_combo_changed(self, event):

@@ -45,7 +45,7 @@ class CapturePage(Page):
         self.current_grid = 0
         self.image_grid_panel = wx.Panel(self.panel)
         self.grid_sizer = wx.GridSizer(self.rows, self.columns, 3, 3)
-        for panel in xrange(self.rows * self.columns):
+        for panel in range(self.rows * self.columns):
             self.panel_grid.append(ImageView(self.image_grid_panel))
             self.panel_grid[panel].Bind(wx.EVT_KEY_DOWN, self.on_key_press)
             self.grid_sizer.Add(self.panel_grid[panel], 0, wx.ALL | wx.EXPAND)
@@ -69,7 +69,7 @@ class CapturePage(Page):
         self.current_grid = 0
         self.gauge.SetValue(0)
         camera_intrinsics.reset()
-        for panel in xrange(self.rows * self.columns):
+        for panel in range(self.rows * self.columns):
             self.panel_grid[panel].SetBackgroundColour((221, 221, 221))
             self.panel_grid[panel].set_image(wx.Image(resources.get_path_for_image("void.png")))
 
@@ -101,7 +101,8 @@ class CapturePage(Page):
                 self.add_frame_to_grid(image)
                 image = self.save_image_file(image, self.current_grid)
                 if self.current_grid <= self.rows * self.columns:
-                    self.gauge.SetValue(self.current_grid * 100.0 / self.rows / self.columns)
+                    self.gauge.SetValue(int(round(
+                        self.current_grid * 100.0 / self.rows / self.columns)))
             self.video_view.play()
 
         elif key == 82: # 'R' 'r'
@@ -112,7 +113,8 @@ class CapturePage(Page):
                 if image is not None:
                     self.add_frame_to_grid(image)
                     if self.current_grid <= self.rows * self.columns:
-                        self.gauge.SetValue(self.current_grid * 100.0 / self.rows / self.columns)
+                        self.gauge.SetValue(int(round(
+                            self.current_grid * 100.0 / self.rows / self.columns)))
             self.video_view.play()
 
     def add_frame_to_grid(self, image):

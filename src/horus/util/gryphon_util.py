@@ -43,7 +43,7 @@ def capture_precise_corners(steps = 3):
     image_capture = horus.gui.engine.image_capture
     stream_save = image_capture.stream
     image_capture.stream = False
-    for i in xrange(steps):
+    for i in range(steps):
         print(i)
         image = image_capture.capture_pattern()
         if image is not None:
@@ -65,8 +65,8 @@ def capture_precise_corners(steps = 3):
 
 def decode_color(value, default=(0,0,0)):
     ret = default
-    if isinstance(value, basestring):
-        ret = struct.unpack('BBB', value.decode('hex'))
+    if isinstance(value, str):
+        ret = struct.unpack('BBB', bytes.fromhex(value))
     elif isinstance(value, (tuple,list)) and \
          len(value) == 3 and \
          all(isinstance(x, int) for x in value):
@@ -247,9 +247,9 @@ def rigid_transform_3D(A, B):
 
     # special reflection case
     if np.linalg.det(R) < 0:
-       print "Reflection detected"
-       Vt[2,:] *= -1
-       R = np.matmul(Vt.T, U.T)
+        print("Reflection detected")
+        Vt[2,:] *= -1
+        R = np.matmul(Vt.T, U.T)
 
     t = -np.matmul(R,centroid_A.T) + centroid_B.T
 

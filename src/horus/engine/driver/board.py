@@ -78,6 +78,15 @@ class Board(object):
 
         self._light = [0,0]
 
+    def _to_text(self, value):
+        if isinstance(value, bytes):
+            return value.decode('ascii', 'ignore')
+        return value
+
+    def _to_bytes(self, value):
+        if isinstance(value, bytes):
+            return value
+        return value.encode('ascii', 'ignore')
 
     def connect(self):
         """Open serial port and perform handshake"""
@@ -92,14 +101,14 @@ class Board(object):
                 tic     = time.time()
                 while ( ((time.time() - tic) < 1) and (profile.settings['firmware_string'] not in version) ):
                     tic     = time.time()
-                    version = self._serial_port.readline()
+                    version = self._to_text(self._serial_port.readline())
                 if profile.settings['firmware_string'] in version:
                     self.motor_speed(1)
                     self._serial_port.timeout = 0.05
                     self._is_connected = True
                     # Send init string
                     if profile.settings['init_string']:
-                        self._send_command(profile.settings['init_string'].encode('ascii','ignore'))
+                        self._send_command(profile.settings['init_string'])
                     # Set current position as origin
                     self.motor_speed(profile.settings['motor_speed_control'])
                     self.motor_acceleration(profile.settings['motor_acceleration_control'])
@@ -193,11 +202,11 @@ class Board(object):
                 self._send_command("M70T" + str(index + 1))
 
     def lasers_on(self):
-        for i in xrange(self._laser_number):
+        for i in range(self._laser_number):
             self.laser_on(i)
 
     def lasers_off(self):
-        for i in xrange(self._laser_number):
+        for i in range(self._laser_number):
             self.laser_off(i)
 
     def ldr_sensor(self, pin):
@@ -217,13 +226,14 @@ class Board(object):
     def _send_command(self, req, callback=None, read_lines=False):
         """Sends the request and returns the response"""
         ret = ''
+        req = self._to_text(req)
         if self._is_connected and req != '':
             if self._serial_port is not None and self._serial_port.isOpen():
                 try:
                     self._serial_port.flushInput()
                     self._serial_port.flushOutput()
                     #print("Cmd: "+req)
-                    self._serial_port.write(req + "\r\n")
+                    self._serial_port.write(self._to_bytes(req + "\r\n"))
                     while req != '~' and req != '!' and ret == '':
                         ret = self.read(read_lines)
                         #print(ret)
@@ -243,9 +253,9 @@ class Board(object):
 
     def read(self, read_lines=False):
         if read_lines:
-            return ''.join(self._serial_port.readlines())
+            return ''.join([self._to_text(line) for line in self._serial_port.readlines()])
         else:
-            return ''.join(self._serial_port.readline())
+            return self._to_text(self._serial_port.readline())
 
     def _success(self):
         self._tries = 0
@@ -265,21 +275,21 @@ class Board(object):
     def _reset(self):
         self._serial_port.flushInput()
         self._serial_port.flushOutput()
-        self._serial_port.write("\x18\r\n")  # Ctrl-x
+        self._serial_port.write(b"\x18\r\n")  # Ctrl-x
         self._serial_port.readline()
 
     def get_serial_list(self):
         """Obtain list of serial devices"""
         baselist = []
         if system == 'Windows':
-            import _winreg
+            import winreg
             try:
-                key = _winreg.OpenKey(
-                    _winreg.HKEY_LOCAL_MACHINE, "HARDWARE\\DEVICEMAP\\SERIALCOMM")
+                key = winreg.OpenKey(
+                    winreg.HKEY_LOCAL_MACHINE, "HARDWARE\\DEVICEMAP\\SERIALCOMM")
                 i = 0
                 while True:
                     try:
-                        values = _winreg.EnumValue(key, i)
+                        values = winreg.EnumValue(key, i)
                     except:
                         return baselist
                     if 'USBSER' in values[0] or \
@@ -319,6 +329,6 @@ class Board(object):
         return False
 
     def lights_off(self):
-        for i in xrange(len(self._light)):
+        for i in range(len(self._light)):
             self.set_light(i,0)
 

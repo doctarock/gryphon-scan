@@ -46,9 +46,9 @@ class WizardPage(wx.Panel):
                  wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT, 2)
         hbox.Add((0, 0), 1, wx.EXPAND)
         hbox.Add(self.skip_button, 0, wx.ALL | wx.EXPAND |
-                 wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT, 2)
+                 wx.ALIGN_CENTER_VERTICAL, 2)
         hbox.Add(self.next_button, 0, wx.ALL | wx.EXPAND |
-                 wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT, 2)
+                 wx.ALIGN_CENTER_VERTICAL, 2)
         vbox.Add(hbox, 0, wx.ALL | wx.EXPAND, 10)
 
         self.SetSizer(vbox)

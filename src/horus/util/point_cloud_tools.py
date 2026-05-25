@@ -86,7 +86,7 @@ class Cloud(object):
             self.points_l     = np.append(self.points_l,     [points_l], axis=0)
             self.points_color = np.append(self.points_color, [points_color], axis=0)
         else:
-            print "Adding {0} points".format(len(points_l))
+            print("Adding {0} points".format(len(points_l)))
             # add lists
             if self.points_rt is not None:
                 if points_rt is None:
@@ -141,7 +141,7 @@ class ChunksPolar(object):
         self.chunks = {}
         self.chunks_count = 0
 
-        print "Build polar chunks"
+        print("Build polar chunks")
         points_rt = np.copy(src_cloud.get_rt())
 
         if points_rt is not None:
@@ -157,18 +157,18 @@ class ChunksPolar(object):
             t[idx] -= 2*mx
 
             # group points to chunks
-            print "\tGrouping points"
+            print("\tGrouping points")
             for _id,(_t,_z) in enumerate(zip(t, z)):
                 self.chunks.setdefault(_z,{}).setdefault(_t,[]).\
                        append(_id)
 
             # calculate chunks parameters
-            print "\tCalculating chunks"
+            print("\tCalculating chunks")
             delete = []
-            for _z,T in self.chunks.iteritems():
+            for _z,T in self.chunks.items():
                 # T - current horizontal slice (Thetas list)
                 s = {}
-                for _t,D in T.iteritems():
+                for _t,D in T.items():
                     # D - current chunk point ids
                     _var = np.var(points_rt[D], axis=0)
                     _cnt = len(D)
@@ -185,19 +185,19 @@ class ChunksPolar(object):
                 # replace layer
                 if len(s)>10: # minimum amount of chunks for precise align ( minimum = 2 to solve equations )
                     self.chunks[_z] = s
-                    print "\tChunk z={0} - {1}".format(_z, len(s))
+                    print("\tChunk z={0} - {1}".format(_z, len(s)))
                 else:
                     delete.append(_z)
             for _x in delete:
                 del self.chunks[_x]
-        print "[Done] build {0} chunks".format(self.chunks_count)
+        print("[Done] build {0} chunks".format(self.chunks_count))
 
 
     def get_center_vertexes(self):
         res=np.empty( (self.chunks_count,3), dtype=np.float32)
         cnt = 0
-        for _z,T in self.chunks.iteritems(): # horizontal slices
-            for _t,D in T.iteritems():
+        for _z,T in self.chunks.items(): # horizontal slices
+            for _t,D in T.items():
                 #print "{0},{1}: {2}".format(_z, _t, D[0])
                 #print self.cloud.points_rt[D[0]]
                 res[cnt] = [self.cloud.points_rt[D[0]][0], _t*self.width, _z*self.height]
@@ -211,12 +211,12 @@ class ChunksPolar(object):
         buf=[0,0]*min(self.chunks_count, chunksB.chunks_count)
         cnt = 0
         res={}
-        for _z,TA in self.chunks.iteritems(): # horizontal slices
+        for _z,TA in self.chunks.items(): # horizontal slices
             TB = chunksB.chunks.get(_z,None)
             if TB is None:
                 continue # no matching chunk in B
 
-            for _t,DA in TA.iteritems():
+            for _t,DA in TA.items():
                 DB = TB.get(_t,None)
                 if DB is None:
                     continue
@@ -235,24 +235,24 @@ class ChunksPolar(object):
 
         res=[]
         delta = np.array([0.,0.])
-        for _z,TA in self.chunks.iteritems(): # horizontal slices
+        for _z,TA in self.chunks.items(): # horizontal slices
             TB = chunksB.chunks.get(_z,None)
             if TB is None:
                 continue # no matching Z layer in B
 
             idxA = []
-            for _t,D in TA.iteritems():
+            for _t,D in TA.items():
                 idxA.append(D[0])
 
             idxB = []
-            for _t,D in TB.iteritems():
+            for _t,D in TB.items():
                 idxB.append(D[0])
 
-            print "Layer {0}: {1} vs {2} points".format(_z, len(idxA), len(idxB))
+            print("Layer {0}: {1} vs {2} points".format(_z, len(idxA), len(idxB)))
             delta = fit_clouds( self.cloud.points_xyz[idxA][:,[0,1]], self.cloud.Mrev[idxA], \
                                 chunksB.cloud.points_xyz[idxB][:,[0,1]], chunksB.cloud.Mrev[idxB], delta )
             res += [delta.tolist()+[_z*self.height]]
-            print ">>>>>>>>> {0} <<<<<<<<<<<".format(delta.tolist()+[_z*self.height])
+            print(">>>>>>>>> {0} <<<<<<<<<<<".format(delta.tolist()+[_z*self.height]))
 
         return np.array(res)
 
@@ -272,27 +272,27 @@ class ChunksCubic(object):
         self.chunks = {}
         self.chunks_count = 0
 
-        print "Build cubic chunks"
+        print("Build cubic chunks")
         # make chunks centers
-        print src_cloud.points_xyz.shape
+        print(src_cloud.points_xyz.shape)
         xyz = np.around(src_cloud.points_xyz/np.array([self.width, self.width, self.height])).astype(int)
-        print xyz.shape
+        print(xyz.shape)
         
         # group points to chunks
-        print "\tGrouping points"
+        print("\tGrouping points")
         for _id,(_x,_y,_z) in enumerate(xyz):
             self.chunks.setdefault(_z,{}).setdefault(_y,{}).setdefault(_x,[]).\
                    append(_id)
         
         # calculate chunks parameters
-        print "\tCalculating chunks"
+        print("\tCalculating chunks")
         delete = []
-        for _z,Y in self.chunks.iteritems():
+        for _z,Y in self.chunks.items():
             # T - current horizontal slice (Thetas list)
             yy = {}
-            for _y,X in Y.iteritems():
+            for _y,X in Y.items():
                 xx = {}
-                for _x,D in X.iteritems():
+                for _x,D in X.items():
                     # D - current chunk point ids
                     if len(D) >= self.min_amount:
                         #print "1 -> {0}".format(len(D))
@@ -311,20 +311,20 @@ class ChunksCubic(object):
             # replace layer
             if len(yy)>0:
                 self.chunks[_z] = yy
-                print "\tChunk z={0} -> {1}".format(_z,len(yy))
+                print("\tChunk z={0} -> {1}".format(_z,len(yy)))
             else:
                 delete.append(_z)
         for _z in delete:
             del self.chunks[_z]
-        print "[Done] build {0} chunks".format(self.chunks_count)
+        print("[Done] build {0} chunks".format(self.chunks_count))
 
 
     def get_center_vertexes(self):
         res=np.empty( (self.chunks_count,3), dtype=np.float32)
         cnt = 0
-        for _z,Y in self.chunks.iteritems(): # horizontal slices
-            for _y,X in Y.iteritems():
-                for _x,D in X.iteritems():
+        for _z,Y in self.chunks.items(): # horizontal slices
+            for _y,X in Y.items():
+                for _x,D in X.items():
                     res[cnt] = [_x*self.width, _y*self.width, _z*self.height]
                     cnt += 1
 
@@ -332,21 +332,21 @@ class ChunksCubic(object):
 
 
     def intersect(self, chunksB):
-        print "Intersect chunks {0} vs {1}".format(self.chunks_count, chunksB.chunks_count)
+        print("Intersect chunks {0} vs {1}".format(self.chunks_count, chunksB.chunks_count))
         buf=[0,0] * min(self.chunks_count, chunksB.chunks_count)
         cnt = 0
         res = {}
-        for _z,YA in self.chunks.iteritems(): # horizontal slices
+        for _z,YA in self.chunks.items(): # horizontal slices
             YB = chunksB.chunks.get(_z,None)
             if YB is None:
                 continue # no matching chunk in B
 
-            for _y,XA in YA.iteritems():
+            for _y,XA in YA.items():
                 XB = YB.get(_y,None)
                 if XB is None:
                     continue
 
-                for _x,DA in XA.iteritems():
+                for _x,DA in XA.items():
                     DB = XB.get(_x,None)
                     if DB is None:
                         continue
@@ -354,7 +354,7 @@ class ChunksCubic(object):
                     buf[cnt] = [DA[0], DB[0]]
                     cnt += 1
             if cnt>0:
-                print "\tChunk z={0} -> {1}".format(_z,cnt)
+                print("\tChunk z={0} -> {1}".format(_z,cnt))
                 res[_z] = buf[0:cnt]
                 cnt = 0
         return res
@@ -365,8 +365,8 @@ class MeshTools(object):
         self.mesh = mesh
 
     def get_laser_clouds(self):
-        print spatial.KDTree
-        print "Splitting mesh by laser id"
+        print(spatial.KDTree)
+        print("Splitting mesh by laser id")
         res = {}
         for p in zip(self.mesh.vertexes, self.mesh.colors, self.mesh.vertexes_meta)[0:self.mesh.vertex_count]:
             c = res.setdefault(p[2][0], Cloud())
@@ -377,7 +377,7 @@ class MeshTools(object):
 
     def get_laser_clouds2(self):
         # with preallocate array
-        print "Splitting mesh by laser id"
+        print("Splitting mesh by laser id")
         idx = {}
         res = {}
         for p in zip(self.mesh.vertexes, self.mesh.colors, self.mesh.vertexes_meta)[0:self.mesh.vertex_count]:
@@ -388,7 +388,7 @@ class MeshTools(object):
             c.points_color[i] = p[1]
             idx[p[2][0]] += 1
 
-        for i,p in idx.iteritems():
+        for i,p in idx.items():
             res[i].resize(p)
         return res
 
@@ -400,7 +400,7 @@ class MeshTools(object):
 
 
     def reconstruct_slices(self, step = None):
-        print "Reconstruct slices"
+        print("Reconstruct slices")
         # step - scanning step in radians
         #step = np.deg2rad(0.9)
         first_laser = np.min(self.mesh.vertexes_meta[:,0])
@@ -472,7 +472,7 @@ class CloudTools(object):
     # Unwrap point cloud to cylindrical coords
     def make_radial(self):
         if self.vertex_count > 0:
-            print "Make polar coords cache"
+            print("Make polar coords cache")
             #[x,y,z] = m.vertexes.T
             r = np.linalg.norm(self.vertexes[:,0:2], axis=1)
             t = np.arctan2(self.vertexes[:,1],self.vertexes[:,0])
@@ -529,7 +529,7 @@ class CloudTools(object):
         return self.vertexes_meta[0][1] is not None
 
     def reconstruct_slices(self, step = None):
-        print "Reconstruct slices"
+        print("Reconstruct slices")
         # step - scanning step in radians
         #step = np.deg2rad(0.9)
         first_laser = np.min(self.vertexes_meta[:,0])
@@ -565,7 +565,7 @@ class CloudTools(object):
             self.make_radial()
 
         assert self.radial is not None, "No input vertices (self.radial == None)"
-        print "Get corrected {0}, {1} points".format(delta, len(vert))
+        print("Get corrected {0}, {1} points".format(delta, len(vert)))
 
         l = np.array(self.vertexes_meta[:,1].tolist(),dtype=np.float32)[:,1] # angle
         res = np.copy(vert) # keep original data intact
@@ -580,7 +580,7 @@ class CloudTools(object):
         return np.array(res, dtype=np.float32)
 
     def build_chunks(self, width = 2., height = 2., maxvar=4., min_amount = 3):
-        print "Build chunks"
+        print("Build chunks")
         if self.radial is None:
             self.make_radial()
 
@@ -602,7 +602,7 @@ class CloudTools(object):
 
             # group points to chunks
             self.chunks = {}
-            print "Grouping points"
+            print("Grouping points")
             #for _id,(_r,_t,_z,_c,_m) in enumerate(zip(self.radial, t, z, \
             for _id,(_r,_t,_z,_c,_m) in enumerate(zip(rad, t, z, \
                  self.colors, self.vertexes_meta)): # radial, chunk_theta, chunk_z, color, laser num
@@ -612,18 +612,18 @@ class CloudTools(object):
                        append([ _id,_r,np.array(_c, np.uint16),_m[1][1] ]) # id, [radial], [color], slice_l
         
             # calculate chunks parameters
-            print "Calculating chunks"
-            for _l,C in self.chunks.iteritems():
+            print("Calculating chunks")
+            for _l,C in self.chunks.items():
                 # C - chunk for current laser cloud
                 delete = []
-                for _z,T in C.iteritems():
+                for _z,T in C.items():
                     # T - current horizontal slice (Thetas list)
                     #print "T: {0}:{1}".format(_z,T)
                     if not isinstance(_z, (int, long)):
                         continue # metadata
 
                     s = {}
-                    for _t,D in T.iteritems():
+                    for _t,D in T.items():
                         # D - current chunk Data
                         # id, [radial], [color], slice_l
                         D = np.array(D)
@@ -632,7 +632,7 @@ class CloudTools(object):
                         if _var[0] <= maxvar and \
                            _cnt >= min_amount:
                             if _var[1]>np.deg2rad(10):
-                                print "Out points {0}".format( np.rad2deg(np.array(D[:,1].tolist())[:,1]) )
+                                print("Out points {0}".format( np.rad2deg(np.array(D[:,1].tolist())[:,1]) ))
                             avg_r = np.mean(D[:,1], axis=0)
                             avg_c = np.mean(D[:,2], axis=0).astype(np.uint8)
                             #avg_l = np.mean(D[:,3], axis=0)
@@ -645,28 +645,28 @@ class CloudTools(object):
                     # replace layer
                     if len(s)>10: # minimum amount of chunks for precise align ( minimum = 2 to solve equations )
                         C[_z] = s
-                        print "Chunk z={0} - {1}".format(_z, len(s))
+                        print("Chunk z={0} - {1}".format(_z, len(s)))
                     else:
                         delete.append(_z)
                 for _x in delete:
                     del C[_x]
-            print "Done build chunks"
+            print("Done build chunks")
 
 
     def get_chunk_vertexes(self, chunk, delta=[0,0]):
         if chunk is None:
             return np.array([]),np.array([])
 
-        print "Retreive chunk vertices"
+        print("Retreive chunk vertices")
         width = np.deg2rad(chunk['width'])
         height = chunk['height']
         vertexes = []
         colors = []
-        for _z,T in chunk.iteritems():
+        for _z,T in chunk.items():
             # T - current horizontal slice
             if isinstance(_z, (int, long)):
                 #print "Slice {0}: {1}".format(_z,T)
-                for _t,D in T.iteritems():
+                for _t,D in T.items():
                     # current chunk
                     # [radial], [color], slice_l, variance, count, [orig index]
                     #print "D: {0}".format(D)
@@ -690,7 +690,7 @@ class CloudTools(object):
 
 
     def adjust_chunks(self, chunkA, chunkB):
-        print "Adjust chunks"
+        print("Adjust chunks")
 
         assert chunkA['width'] == chunkB['width'] and \
             chunkA['height'] == chunkB['height'], \
@@ -703,7 +703,7 @@ class CloudTools(object):
         # prepare point indexes
         ls = np.array(self.vertexes_meta[:,1].tolist())[:,1] # turntable L
         delta = [0] # [0,0]
-        for _z,TA in chunkA.iteritems(): # horizontal slices
+        for _z,TA in chunkA.items(): # horizontal slices
             if not isinstance(_z, (int, long)):
                 continue # skip metadata
 
@@ -716,7 +716,7 @@ class CloudTools(object):
             pB = []
             lAB = []
             Cn = []
-            for _t,DA in TA.iteritems():
+            for _t,DA in TA.items():
                 # current chunk
                 DB = TB.get(_t,None)
                 if DB is None:
@@ -875,9 +875,9 @@ def fit_correction(pA, pB, lAB, prev = [0]): #[0,0]):
     # pA,pB - cartensian coords of points reverted to capture position
     '''
     V = prev
-    print "Fit A {0}, B {1}, lAB {2}".format(len(pA),len(pB),len(lAB))
+    print("Fit A {0}, B {1}, lAB {2}".format(len(pA),len(pB),len(lAB)))
     offset, ier = optimize.leastsq(risiduals_fit_correction, V, args=( (pA, pB, lAB) ))
-    print "Fit result: {0}  ier={1}  delta_r={2}".format(offset, ier, np.mean(risiduals_fit_correction(offset,pA,pB,lAB)) )
+    print("Fit result: {0}  ier={1}  delta_r={2}".format(offset, ier, np.mean(risiduals_fit_correction(offset,pA,pB,lAB)) ))
     #print np.round( np.linalg.norm( pA[:], axis=1 ), 3)
     #print np.round( np.linalg.norm( pA[:] + offset, axis=1 ), 3)
     #print np.round( np.linalg.norm( pB[:] + offset, axis=1 ), 3)
@@ -891,7 +891,7 @@ def fit_correction(pA, pB, lAB, prev = [0]): #[0,0]):
     V = prev
     #print "Fit A {0}, B {1}, lAB {2}".format(len(pA),len(pB),len(lAB))
     offset, ier = optimize.leastsq(risiduals_fit_correction, V, args=( (pA, pB, lAB) ))
-    print "Fit result: {0}  ier={1}  delta_r={2}".format(offset, ier, np.mean(risiduals_fit_correction(offset,pA,pB,lAB)) )
+    print("Fit result: {0}  ier={1}  delta_r={2}".format(offset, ier, np.mean(risiduals_fit_correction(offset,pA,pB,lAB)) ))
     #print np.round( np.linalg.norm( pA[:], axis=1 ), 3)
     #print np.round( np.linalg.norm( pA[:] + offset, axis=1 ), 3)
     #print np.round( np.linalg.norm( pB[:] + offset, axis=1 ), 3)
@@ -932,12 +932,12 @@ def risiduals_fit_correction(parameters, points):
 def fit_correction(data):
     # data: r, theta - l_slice
 
-    print "\nFit data: {0}".format(data)
-    print np.rad2deg(data[0][1]-data[1][1])
+    print("\nFit data: {0}".format(data))
+    print(np.rad2deg(data[0][1]-data[1][1]))
     # R,d,gamma
     V = 0, 0
     offset, ier = optimize.leastsq(risiduals_fit_correction, V, args=(data))
-    print "Result: {0}  ier={1}".format(offset, ier)
+    print("Result: {0}  ier={1}".format(offset, ier))
 
     return offset
 '''
@@ -945,13 +945,13 @@ def risiduals_fit_clouds(V, PA, MAneg, PB, MBneg):
     A = PA+ apply_mat_arr(MAneg, np.full((PA.shape[0],2), V))
     B = PB+ apply_mat_arr(MBneg, np.full((PB.shape[0],2), V))
     #print "A: {0}\nB:{1} {2}".format(A.shape, B.shape, B[20]-PB[20])
-    print "\n\tA: {0}\tB:{1}".format(A[10]-PA[10], B[10]-PB[10])
+    print("\n\tA: {0}\tB:{1}".format(A[10]-PA[10], B[10]-PB[10]))
     tA = spatial.KDTree(A)
     tB = spatial.KDTree(B)
     #print len(tA.query_pairs(10))
     diff = tA.sparse_distance_matrix(tB, 99999999)
     res = diff.mean() # TODO mean of minimums
-    print "\t{0} -> {1}".format(V, res)
+    print("\t{0} -> {1}".format(V, res))
     #return [res,res]
     return diff.toarray().sum(axis=0)
 
@@ -960,7 +960,7 @@ def fit_clouds(PA, MAneg, PB, MBneg, prev = np.array([0.,0.])):
 
     V = prev
     offset, ier = optimize.leastsq(risiduals_fit_clouds, V, args=( (PA, MAneg, PB, MBneg) ))
-    print "Fit result: {0}  ier={1}".format(offset, ier)
+    print("Fit result: {0}  ier={1}".format(offset, ier))
     #res = optimize.least_squares(risiduals_fit_clouds, V, args=( (PA, MAneg, PB, MBneg) ), bounds = [(-15,-15),(15,15)] )
     #offset = res.x
     #print "-----------------------------\nFit result: {0}\n===============================\n".format(res)

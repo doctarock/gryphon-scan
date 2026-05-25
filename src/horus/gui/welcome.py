@@ -18,7 +18,7 @@ class WelcomeDialog(wx.Dialog):
 
     def __init__(self, parent):
         wx.Dialog.__init__(self, parent, size=(640 + 120, 480 + 40),
-                           style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
+                           style=wx.DEFAULT_DIALOG_STYLE)
 
         self.parent = parent
         self.last_files = profile.settings['last_files']

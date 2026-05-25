@@ -27,6 +27,14 @@ class PlatformExtrinsicsError(Exception):
         Exception.__init__(self, "PlatformExtrinsicsError")
 
 
+def _valid_platform_extrinsics(R, t):
+    return R is not None and t is not None and \
+           np.shape(R) == (3, 3) and np.shape(t) == (3,) and \
+           np.all(np.isfinite(R)) and np.all(np.isfinite(t)) and \
+           t[2] > 0 and \
+           np.linalg.norm(t) < 10000
+
+
 class MarkerData(object):
 
     def __init__(self, name, h = None, motor_step = None):
@@ -72,7 +80,7 @@ class MarkerData(object):
         self.x = np.array(self.x)
         self.y = np.array(self.y)
         self.z = np.array(self.z)
-        points = zip(self.x, self.y, self.z)
+        points = np.array(list(zip(self.x, self.y, self.z)))
 
         if len(points) > 4:
             # Fitting a plane
@@ -132,10 +140,10 @@ class MarkerData(object):
 
     def getError(self, R, t):
         if len(self.x) > 2:
-            v = zip( self.x, self.y, self.z ) - t
+            v = np.array(list(zip(self.x, self.y, self.z))) - t
             v = np.dot(R.T, v.T)
             dz = np.mean(np.abs(v[2] - np.mean(v[2])))
-            dr = np.linalg.norm(zip(v[0], v[1]), axis=1)
+            dr = np.linalg.norm(np.array(list(zip(v[0], v[1]))), axis=1)
             r = np.mean(dr)
             dr = np.mean(np.abs(dr - r))
             return [dz,dr,r]
@@ -144,12 +152,12 @@ class MarkerData(object):
     def getDelta(self, R, t, bestIndex=0, radius = None):
         if len(self.x) > 2:
             # v - data points in R,t coords system
-            v = zip( self.x, self.y, self.z ) - t
+            v = np.array(list(zip(self.x, self.y, self.z))) - t
             v = np.dot(R.T, v.T)
 
             # if not specified set radius to mean distance
             if radius is None:
-                radius = np.mean( np.linalg.norm(zip(v[0], v[1]), axis=1) )
+                radius = np.mean( np.linalg.norm(np.array(list(zip(v[0], v[1]))), axis=1) )
 
             # build first vector for average height cylinder with radius 'r'
             v0 = [v[0][bestIndex], v[1][bestIndex]] # Best data point on XY plane vector
@@ -172,7 +180,7 @@ class MarkerData(object):
                 rvec = cv2.Rodrigues( np.array([0,0,dl]))[0]
                 e += [np.dot(np.float32(rvec), v0)]
             #print( np.array(zip( np.round(v,4).tolist(), np.round(e,4).tolist(), np.round(np.array(self.l) - self.l[0],4) )) )
-            e -= v.T
+            e = np.array(e) - v.T
             #return np.dot( np.sum(e, axis=0), R.T )
             return np.dot(R, np.mean(e, axis=0))
 
@@ -182,7 +190,7 @@ class NormalData(MarkerData):
         self.x = np.array(self.x)
         self.y = np.array(self.y)
         self.z = np.array(self.z)
-        points = zip(self.x, self.y, self.z)
+        points = np.array(list(zip(self.x, self.y, self.z)))
 
         if len(points) > 3:
             # Fitting rotation axis for normals
@@ -363,7 +371,7 @@ class PlatformExtrinsics(MovingCalibration):
         t_avg_n = 0
 
         # calibrate each data set and calculate average results
-        for i,d in self.data.iteritems():
+        for i,d in self.data.items():
             d.calibrate()
             if d.n is not None:
                 normal_avg += d.n
@@ -424,8 +432,8 @@ class PlatformExtrinsics(MovingCalibration):
             # TODO Check missed during measurement points
 
             rsteps = 3
-            data = zip( zip(self.data['c0'].x, self.data['c0'].y, self.data['c0'].z),
-                        zip(self.data['c1'].x, self.data['c1'].y, self.data['c1'].z) )
+            data = list(zip(zip(self.data['c0'].x, self.data['c0'].y, self.data['c0'].z),
+                            zip(self.data['c1'].x, self.data['c1'].y, self.data['c1'].z)))
             data1 = np.array(data[:-rsteps]).reshape(-1,3)
             data2 = np.array(data[rsteps:]).reshape(-1,3)
             R, t, centroid_A, centroid_B = rigid_transform_3D(data1, data2)
@@ -440,7 +448,7 @@ class PlatformExtrinsics(MovingCalibration):
             print(centroid_A)
             print(t)
             #tr = centroid_A - (np.linalg.inv(R-np.eye(3)) * t)
-            tr = np.linalg.inv(np.eye(3)-R) * t
+            tr = np.linalg.inv(np.eye(3)-R).dot(t)
 
             logger.info(" --- Rotation SVD c0 c1 --- ")
             logger.info(" Normal: " + str( Rv ))
@@ -454,13 +462,14 @@ class PlatformExtrinsics(MovingCalibration):
         #t_avg = np.array([0, 106, 463], dtype=np.float32)
 
         if self._is_calibrating:
-            if t_avg_n>0:
+            if t_avg_n > 0 and _valid_platform_extrinsics(R_avg, t_avg):
                 self.n = normal_avg
                 self.R = R_avg
                 self.t = t_avg
                 response = (True, (self.R, self.t, self.data))
 
             else:
+                logger.error("Invalid platform extrinsics: R={0}, t={1}".format(R_avg, t_avg))
                 response = (False, PlatformExtrinsicsError())
         else:
             response = (False, CalibrationCancel())

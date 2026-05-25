@@ -27,8 +27,8 @@ class ScannerAutocheckPages(wx.Panel):
                                     start_callback=self.on_start,
                                     cancel_callback=self.on_cancel)
 
-	self.video_page.add_info(_("Put the pattern on the platform as shown in the "
-                             "picture and press \"Start\""), "pattern-position.png")
+        self.video_page.add_info(_("Put the pattern on the platform as shown in the "
+                                   "picture and press \"Start\""), "pattern-position.png")
 
         # Layout
         hbox = wx.BoxSizer(wx.HORIZONTAL)
@@ -58,7 +58,7 @@ class ScannerAutocheckPages(wx.Panel):
             self.wait_cursor = wx.BusyCursor()
 
     def progress_calibration(self, progress):
-        self.video_page.gauge.SetValue(progress)
+        self.video_page.gauge.SetValue(int(round(progress)))
 
     def after_calibration(self, response):
         ret, result = response
@@ -80,14 +80,14 @@ class ScannerAutocheckPages(wx.Panel):
                             "Also you can set up the calibration's capture "
                             "settings in the \"Adjustment workbench\" "
                             "until the pattern is detected correctly"),
-                    _(result), wx.OK | wx.ICON_ERROR)
+                    str(_(result)), wx.OK | wx.ICON_ERROR)
                 dlg.ShowModal()
                 dlg.Destroy()
             elif isinstance(result, WrongMotorDirection):
                 dlg = wx.MessageDialog(
                     self, _(
                         "Please, select \"Invert the motor direction\" in the preferences"),
-                    _(result), wx.OK | wx.ICON_ERROR)
+                    str(_(result)), wx.OK | wx.ICON_ERROR)
                 dlg.ShowModal()
                 dlg.Destroy()
                 self.GetParent().GetParent().launch_preferences(basic=True)
@@ -97,7 +97,7 @@ class ScannerAutocheckPages(wx.Panel):
                             "Also you can set up the calibration's capture and "
                             "segmentation settings in the \"Adjustment workbench\" "
                             "until the lasers are detected correctly"),
-                    _(result), wx.OK | wx.ICON_ERROR)
+                    str(_(result)), wx.OK | wx.ICON_ERROR)
                 dlg.ShowModal()
                 dlg.Destroy()
         self._initialize()

@@ -65,7 +65,7 @@ class CalibrationPage(WizardPage):
         self.video_view.set_callback(self.get_image)
 
     def on_show(self, event):
-        if event.GetShow():
+        if event.IsShown():
             driver.board.lasers_off()
             self.update_status(driver.is_connected)
         else:
@@ -145,7 +145,7 @@ class CalibrationPage(WizardPage):
         self.wait_cursor = wx.BusyCursor()
 
     def progress_calibration(self, progress):
-        self.gauge.SetValue(progress)
+        self.gauge.SetValue(int(round(progress)))
 
     def after_calibration(self, response):
         ret, result = response
@@ -166,6 +166,7 @@ class CalibrationPage(WizardPage):
             profile.settings['platform_extrinsics_hash'] = calibration_data.md5_hash()
 
             combo_calibration.accept()
+            profile.settings.save_settings(categories=["calibration_settings"])
         else:
             if isinstance(result, ComboCalibrationError):
                 self.result_label.SetLabel(

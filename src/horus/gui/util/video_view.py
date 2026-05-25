@@ -7,19 +7,21 @@ __license__ = 'GNU General Public License v2 http://www.gnu.org/licenses/gpl2.ht
 
 import wx._core
 
-from threading import Timer
+from threading import Timer, Lock
 from horus.gui.util.image_view import ImageView
 
 
 class VideoView(ImageView):
 
-    def __init__(self, parent, callback=None, size=(-1, -1), wxtimer=True):
+    def __init__(self, parent, callback=None, size=(-1, -1), wxtimer=False):
         ImageView.__init__(self, parent, size=size, black=True)
 
         self.callback = callback
 
         self.wxtimer = wxtimer
         self.playing = False
+        self.timer = None
+        self._capture_lock = Lock()
 
         if self.wxtimer:
             self.timer = wx.Timer(self)
@@ -30,10 +32,14 @@ class VideoView(ImageView):
             if self.wxtimer:
                 self.timer.Stop()
             else:
-                self.timer.cancel()
+                if self.timer is not None:
+                    self.timer.cancel()
             if self.playing:
-                if self.callback is not None:
-                    frame = self.callback()
+                if self.callback is not None and self._capture_lock.acquire(False):
+                    try:
+                        frame = self.callback()
+                    finally:
+                        self._capture_lock.release()
                     if frame is not None:
                         if self.playing:
                             if self.wxtimer:
@@ -42,7 +48,7 @@ class VideoView(ImageView):
                                 wx.CallAfter(self.set_frame, frame)
                     self._start()
         except Exception as e:
-            print(e.message)
+            print(e)
 
     def set_callback(self, callback):
         self.callback = callback
@@ -50,20 +56,13 @@ class VideoView(ImageView):
     def play(self, flush=True):
         if not self.playing:
             self.playing = True
-            if self.callback is not None:
-                # Flush video
-                if flush:
-                    self.callback()
-                    self.callback()
-                frame = self.callback()
-                self.set_frame(frame)
             self._start()
 
     def _start(self):
         if self.wxtimer:
-            self.timer.Start(milliseconds=100)
+            self.timer.Start(milliseconds=250)
         else:
-            self.timer = Timer(0.1, self.on_timer, (None,))
+            self.timer = Timer(0.25, self.on_timer, (None,))
             self.timer.start()
 
     def stop(self):
@@ -72,8 +71,8 @@ class VideoView(ImageView):
             if self.wxtimer:
                 self.timer.Stop()
             else:
-                self.timer.cancel()
-                self.timer.join()
+                if self.timer is not None:
+                    self.timer.cancel()
 
     def reset(self):
         self.hide = True

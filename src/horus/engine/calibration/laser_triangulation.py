@@ -8,7 +8,6 @@ __license__ = 'GNU General Public License v2 http://www.gnu.org/licenses/gpl2.ht
 import struct
 import math
 import numpy as np
-from scipy.sparse import linalg as splinalg
 from scipy import sparse, linalg
 import numpy.linalg
 import cv2
@@ -120,20 +119,26 @@ class LaserTriangulation(MovingCalibration):
         self.image_capture.stream = True
 
         # Save point clouds
-        for i,mesh in self._point_cloud.iteritems():
+        for i,mesh in self._point_cloud.items():
             ply.save_scene('laser_triangulation' + str(i) + '.ply', self._point_cloud[i])
 
         self.planes = {}
 
         # Compute planes
-        for i,mesh in self._point_cloud.iteritems():
+        for i,mesh in self._point_cloud.items():
             if self._is_calibrating:
                 # distance, normal, std
                 self.planes[i] = compute_plane(i, mesh.get_vertexes())
 
         if self._is_calibrating:
-            if all(np.array(self.planes.values())[:,2] < 1.0) and \
-               all(np.array(self.planes.values())[:,0]):
+            planes = [
+                p for p in self.planes.values()
+                if p is not None and p[0] is not None and p[1] is not None and p[2] is not None
+            ]
+            planes = np.array(planes, dtype=object)
+            if len(planes) > 0 and \
+               all(planes[:,2] < 1.0) and \
+               all(planes[:,0]):
                 response = (True, (self.planes, self._point_cloud))
             else:
                 response = (False, LaserTriangulationError())
@@ -146,7 +151,7 @@ class LaserTriangulation(MovingCalibration):
         return response
 
     def accept(self):
-        for i,p in self.planes.iteritems():
+        for i,p in self.planes.items():
             self.calibration_data.laser_planes[i].distance = p[0]
             self.calibration_data.laser_planes[i].normal = p[1]
 
@@ -154,8 +159,12 @@ class LaserTriangulation(MovingCalibration):
 # ========================================================
 
 def compute_plane(index, X):
-    if X is not None and X.shape[0] > 3:
+    min_points = 30
+    if X is not None and X.shape[0] >= min_points:
         model, inliers = ransac(X, PlaneDetection(), 3, 0.1)
+        if model is None or inliers is None or len(inliers) < min_points:
+            logger.warning("Laser calibration {0}: plane fit failed".format(index))
+            return None, None, None
 
         distance, normal, M = model
         std = np.dot(M.T, normal).std()
@@ -168,6 +177,10 @@ def compute_plane(index, X):
 
         return distance, normal, std
     else:
+        point_count = 0 if X is None else X.shape[0]
+        logger.warning(
+            "Laser calibration {0}: not enough points ({1}/{2})".format(
+                index, point_count, min_points))
         return None, None, None
 
 
@@ -176,32 +189,40 @@ def compute_plane(index, X):
 class PlaneDetection(object):
 
     def fit(self, X):
+        if X is None or X.shape[0] < 3:
+            return None
         M, Xm = self._compute_m(X)
-        # U = linalg.svds(M, k=2)[0]
-        # normal = np.cross(U.T[0], U.T[1])
-
-        # slower but fit in memory
-        U = splinalg.svds(M, k=2)[0]
-        normal = np.cross(U.T[0], U.T[1])
-
-        # faster but need a lot of memory 
-        #normal = numpy.linalg.svd(M)[0][:, 2]
-
-        # save memory enough to fit but.... is this ok?
-        #normal = numpy.linalg.svd(M, full_matrices= False)[0][:, 2]
+        try:
+            U, S, Vt = numpy.linalg.svd(M, full_matrices=False)
+        except numpy.linalg.LinAlgError:
+            return None
+        if len(S) < 3 or S[1] <= 1e-9:
+            return None
+        normal = U[:, -1]
+        normal_norm = numpy.linalg.norm(normal)
+        if normal_norm <= 1e-12 or not numpy.isfinite(normal_norm):
+            return None
+        normal = normal / normal_norm
 
         if normal[2] < 0:
             normal *= -1
         dist = np.dot(normal, Xm)
+        if not numpy.isfinite(dist) or not numpy.all(numpy.isfinite(normal)):
+            return None
         return dist, normal, M
 
     def residuals(self, model, X):
+        if model is None:
+            return np.full(X.shape[0], np.inf)
         _, normal, _ = model
         M, Xm = self._compute_m(X)
         return np.abs(np.dot(M.T, normal))
 
     def is_degenerate(self, sample):
-        return False
+        if sample is None or sample.shape[0] < 3:
+            return True
+        M, _ = self._compute_m(sample)
+        return numpy.linalg.matrix_rank(M, tol=1e-9) < 2
 
     def _compute_m(self, X):
         n = X.shape[0]
@@ -217,11 +238,15 @@ def ransac(data, model_class, min_samples, threshold, max_trials=500):
     best_inlier_num = 0
     best_inliers = None
     data_idx = np.arange(data.shape[0])
-    for _ in xrange(max_trials):
-        sample = data[np.random.randint(0, data.shape[0], 3)]
+    if data.shape[0] < min_samples:
+        return None, None
+    for _ in range(max_trials):
+        sample = data[np.random.choice(data.shape[0], min_samples, replace=False)]
         if model_class.is_degenerate(sample):
             continue
         sample_model = model_class.fit(sample)
+        if sample_model is None:
+            continue
         sample_model_residua = model_class.residuals(sample_model, data)
         sample_model_inliers = data_idx[sample_model_residua < threshold]
         inlier_num = sample_model_inliers.shape[0]
@@ -230,6 +255,8 @@ def ransac(data, model_class, min_samples, threshold, max_trials=500):
             best_inliers = sample_model_inliers
     if best_inliers is not None:
         best_model = model_class.fit(data[best_inliers])
+        if best_model is None:
+            return None, None
     return best_model, best_inliers
 
 

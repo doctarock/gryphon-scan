@@ -80,7 +80,7 @@ class PlatformByLasers(Calibration):
                 dist, norm, std = compute_plane(i, point_cloud)
 
                 if std < 1.0 and norm is not None:
-                response = (True, (dist, norm, std))
+                    response = (True, (dist, norm, std))
             else:
                 response = (False, PlatformByLasersError())
 

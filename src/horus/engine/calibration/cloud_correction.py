@@ -74,8 +74,8 @@ class CloudCorrection(MovingCalibration):
         # choose points for calibration. closest to the focal center are less distorted
         print("--- Points selection")
         corner_id = []
-        for y in xrange(self.pattern.rows):
-            for x in xrange(self.pattern.columns):
+        for y in range(self.pattern.rows):
+            for x in range(self.pattern.columns):
                 i = y*self.pattern.columns + x
                 if corners[i][0][0] > self.calibration_data.camera_matrix[0][2]:
                     if i>0:
@@ -109,7 +109,7 @@ class CloudCorrection(MovingCalibration):
 
         # measure actual positions
         #self.clouds = np.empty((len(self.calibration_data.laser_planes),0))
-        for i in xrange(ncaptures):
+        for i in range(ncaptures):
             if not self._is_calibrating:
                 break
 

@@ -62,7 +62,7 @@ def _load_binary(mesh, stream):
     data = np.fromfile(stream, dtype=dtype, count=count)
 
     mesh.vertex_count = 3 * count
-    n = np.zeros((mesh.vertex_count / 3, 9), np.float32)
+    n = np.zeros((mesh.vertex_count // 3, 9), np.float32)
     n[:, 0:3] = n[:, 3:6] = n[:, 6:9] = data['n']
     mesh.normal = n.reshape(mesh.vertex_count, 3)
     mesh.vertexes = np.reshape(data['v'], (mesh.vertex_count, 3))

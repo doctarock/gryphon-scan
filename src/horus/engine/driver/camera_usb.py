@@ -78,6 +78,7 @@ class Camera_usb(Camera):
             self.CV_CAP_PROP_FRAME_WIDTH  = cv2.CAP_PROP_FRAME_WIDTH
             self.CV_CAP_PROP_FRAME_HEIGHT = cv2.CAP_PROP_FRAME_HEIGHT
             self.CV_CAP_PROP_AUTO_EXPOSURE = cv2.CAP_PROP_AUTO_EXPOSURE
+            self.CV_CAP_PROP_FOURCC       = cv2.CAP_PROP_FOURCC
         else:
             self.CV_CAP_PROP_BRIGHTNESS   = cv2.cv.CV_CAP_PROP_BRIGHTNESS
             self.CV_CAP_PROP_CONTRAST     = cv2.cv.CV_CAP_PROP_CONTRAST
@@ -87,6 +88,7 @@ class Camera_usb(Camera):
             self.CV_CAP_PROP_FRAME_WIDTH  = cv2.cv.CV_CAP_PROP_FRAME_WIDTH
             self.CV_CAP_PROP_FRAME_HEIGHT = cv2.cv.CV_CAP_PROP_FRAME_HEIGHT
             self.CV_CAP_PROP_AUTO_EXPOSURE = cv2.cv.CV_CAP_PROP_AUTO_EXPOSURE
+            self.CV_CAP_PROP_FOURCC       = cv2.cv.CV_CAP_PROP_FOURCC
 
 
     def connect(self):
@@ -145,7 +147,10 @@ class Camera_usb(Camera):
 
             # disable Auto Exposure
             if LooseVersion(cv2.__version__) > LooseVersion("3.0.0"):
-                self._capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)
+                if system == 'Windows':
+                    self._capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.75)
+                else:
+                    self._capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)
                 self.get_exposure()
 
             if system == 'Darwin' and self.controls is not None:
@@ -189,7 +194,11 @@ class Camera_usb(Camera):
                         tries += 1
                         if not self._reading:
                             self._capture.release()
-                            cv2.destroyAllWindows()
+                            try:
+                                cv2.destroyAllWindows()
+                            except cv2.error as e:
+                                logger.debug("OpenCV window cleanup skipped: {0}".format(e))
+                            break
                 logger.info(" Done")
 
     def _check_video(self):
@@ -262,7 +271,7 @@ class Camera_usb(Camera):
                         c += 1
                         #print "     frame {1}: {0} ms".format(int((e - b) * 1000), c)
                 else:
-                    for i in xrange(flush+1):
+                    for i in range(flush+1):
                         #b = time.time()
                         ret, image = self._capture.read()
                         #e = time.time()
@@ -312,9 +321,9 @@ class Camera_usb(Camera):
             self._max_contrast   = self.DetectPropMax(0, 255, self.CV_CAP_PROP_CONTRAST)
             self._max_exposure   = self.DetectPropMax(-255, 255, self.CV_CAP_PROP_EXPOSURE)
             self._max_saturation = self.DetectPropMax(0, 255, self.CV_CAP_PROP_SATURATION)
-            print "Max Bri {0} Contr {1} Exp {2} Sat {3}".format(
+            print("Max Bri {0} Contr {1} Exp {2} Sat {3}".format(
                 self._max_brightness, self._max_contrast,
-                self._max_exposure, self._max_saturation)
+                self._max_exposure, self._max_saturation))
 
     # ------------- Brightness control ------------
     def get_brightness(self):
@@ -379,7 +388,7 @@ class Camera_usb(Camera):
                     if system == 'Linux' and ret:
                         raise InputOutputError()
                     if system == 'Windows' and not ret:
-                        print "ERROR Set Exposure {0}".format(value)
+                        print("ERROR Set Exposure {0}".format(value))
                     self._updating = False
                 return True
         return False
@@ -415,6 +424,7 @@ class Camera_usb(Camera):
 
                     self.set_anti_flicker(1)
                 elif system == 'Windows':
+                    self._capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.75)
                     value = int(round(-math.log(value) / math.log(2)))
                     #value = value / 64 * self._max_exposure
                     self._capture.set(self.CV_CAP_PROP_EXPOSURE, value)
@@ -442,7 +452,7 @@ class Camera_usb(Camera):
 
     # ------------- Frame rate control ------------
     def set_frame_rate(self, value, init_phase=False):
-	logger.info("Set Frame rate: {0}".format(value))
+        logger.info("Set Frame rate: {0}".format(value))
         if self._is_connected:
             if not init_phase:
                 if system == 'Windows':
@@ -490,15 +500,59 @@ class Camera_usb(Camera):
                 if self._auto_resolution:
                     return
                 self._auto_resolution = True
-                width = 10000
-                height = 10000
+                self._set_best_resolution()
+                return
 
             if self._width != width or self._height != height:
                 self._updating = True
+                self._set_preferred_format()
                 self._set_width(width)
                 self._set_height(height)
                 self._update_resolution()
+                if self._width <= 0 or self._height <= 0:
+                    for fallback_width, fallback_height in ((1280, 720), (640, 480)):
+                        logger.info(
+                            "Invalid camera resolution; trying {0}x{1}".format(
+                                fallback_width, fallback_height))
+                        self._set_width(fallback_width)
+                        self._set_height(fallback_height)
+                        self._update_resolution()
+                        if self._width > 0 and self._height > 0:
+                            break
                 self._updating = False
+
+    def _set_preferred_format(self):
+        if system == 'Windows' and LooseVersion(cv2.__version__) > LooseVersion("3.0.0"):
+            try:
+                self._capture.set(
+                    self.CV_CAP_PROP_FOURCC,
+                    cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+            except:
+                pass
+
+    def _set_best_resolution(self):
+        candidates = [(1920, 1080), (1600, 1200), (1280, 960), (1280, 720),
+                      (1024, 768), (800, 600), (640, 480)]
+        best = (0, 0)
+        self._updating = True
+        self._set_preferred_format()
+        for width, height in candidates:
+            self._set_width(width)
+            self._set_height(height)
+            self._update_resolution()
+            if self._width == width and self._height == height:
+                logger.info("Selected auto resolution: {0}x{1}".format(width, height))
+                self._updating = False
+                return
+            if self._width * self._height > best[0] * best[1]:
+                best = (self._width, self._height)
+
+        if best[0] > 0 and best[1] > 0:
+            logger.info("Using best accepted resolution: {0}x{1}".format(best[0], best[1]))
+            self._set_width(best[0])
+            self._set_height(best[1])
+            self._update_resolution()
+        self._updating = False
 
     def _set_width(self, value):
         self._capture.set(self.CV_CAP_PROP_FRAME_WIDTH, value)
@@ -566,7 +620,7 @@ class Camera_usb(Camera):
         return ret
 
     def _count_cameras(self):
-        for i in xrange(5):
+        for i in range(5):
             cap = cv2.VideoCapture(i)
             res = not cap.isOpened()
             cap.release()
@@ -577,11 +631,12 @@ class Camera_usb(Camera):
     def get_video_list(self):
         baselist = []
         if system == 'Windows':
-            if not self._is_connected:
-                count = self._count_cameras()
-                for i in xrange(count):
-                    baselist.append(str(i))
-                self._video_list = baselist
+            current_id = str(profile.settings['camera_id'])
+            baselist = [current_id] if current_id else []
+            for camera_id in ['0', '1']:
+                if camera_id not in baselist:
+                    baselist.append(camera_id)
+            self._video_list = baselist
         elif system == 'Darwin':
             for device in uvc.mac.Camera_List():
                 baselist.append(str(device.src_id))

@@ -117,6 +117,7 @@ class ResultPage(Page):
         mtx, dist = self.result
         profile.settings['camera_matrix'] = mtx
         profile.settings['distortion_vector'] = dist
+        profile.settings.save_settings(categories=["calibration_settings"])
         if self.exit_callback is not None:
             self.exit_callback()
 
@@ -140,7 +141,7 @@ class ResultPage(Page):
             if isinstance(result, CameraIntrinsicsError):
                 dlg = wx.MessageDialog(
                     self, _("Camera intrinsics calibration has failed. Please try again"),
-                    _(result), wx.OK | wx.ICON_ERROR)
+                    str(_(result)), wx.OK | wx.ICON_ERROR)
                 dlg.ShowModal()
                 dlg.Destroy()
 
@@ -157,7 +158,8 @@ class CameraIntrinsics3DPlot(wx.Panel):
         self.canvas = FigureCanvasWxAgg(self, -1, self.fig)
         self.canvas.SetExtraStyle(wx.EXPAND)
 
-        self.ax = self.fig.gca(projection='3d', axisbg=(0.7490196, 0.7490196, 0.7490196, 1))
+        self.ax = self.fig.add_subplot(111, projection='3d')
+        self.ax.set_facecolor((0.7490196, 0.7490196, 0.7490196, 1))
 
         self.print_canvas()
 

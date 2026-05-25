@@ -41,9 +41,9 @@ class PointCloudROI(object):
         self._center_v = 0
         self._circle_resolution = 30
         self._circle_array = np.array([[np.cos(i * 2 * np.pi / self._circle_resolution)
-                                        for i in xrange(self._circle_resolution)],
+                                        for i in range(self._circle_resolution)],
                                        [np.sin(i * 2 * np.pi / self._circle_resolution)
-                                        for i in xrange(self._circle_resolution)],
+                                        for i in range(self._circle_resolution)],
                                        np.zeros(self._circle_resolution)])
 
     def read_profile(self):
@@ -87,11 +87,7 @@ class PointCloudROI(object):
                                (rho >= -self._radious) &
                                (rho <= self._radious))[0]
             else:
-                # valid points should be above platform and in front of camera for all scanning cylinder area
-                # fast approximation of camera distance is platform Z offset
-                idx = np.where((z >= 0) &
-                               (rho >= -self.calibration_data.platform_translation[2]) &
-                               (rho <=  self.calibration_data.platform_translation[2]))[0]
+                idx = np.where(np.all(np.isfinite(point_cloud), axis=0))[0]
 
             return point_cloud[:, idx], texture[:, idx]
 
@@ -110,15 +106,15 @@ class PointCloudROI(object):
             cy = self.calibration_data.camera_matrix[1][2]
 
             center_up_u = self._no_trimmed_umin + \
-                (self._no_trimmed_umax - self._no_trimmed_umin) / 2
-            center_up_v = self._upper_vmin + (self._upper_vmax - self._upper_vmin) / 2
+                (self._no_trimmed_umax - self._no_trimmed_umin) // 2
+            center_up_v = self._upper_vmin + (self._upper_vmax - self._upper_vmin) // 2
             center_down_u = self._no_trimmed_umin + \
-                (self._no_trimmed_umax - self._no_trimmed_umin) / 2
-            center_down_v = self._lower_vmax + (self._lower_vmin - self._lower_vmax) / 2
-            axes_up = ((self._no_trimmed_umax - self._no_trimmed_umin) / 2,
-                       ((self._upper_vmax - self._upper_vmin) / 2))
-            axes_down = ((self._no_trimmed_umax - self._no_trimmed_umin) / 2,
-                         ((self._lower_vmin - self._lower_vmax) / 2))
+                (self._no_trimmed_umax - self._no_trimmed_umin) // 2
+            center_down_v = self._lower_vmax + (self._lower_vmin - self._lower_vmax) // 2
+            axes_up = (int((self._no_trimmed_umax - self._no_trimmed_umin) // 2),
+                       int((self._upper_vmax - self._upper_vmin) // 2))
+            axes_down = (int((self._no_trimmed_umax - self._no_trimmed_umin) // 2),
+                         int((self._lower_vmin - self._lower_vmax) // 2))
 
             # upper ellipse
             if (center_up_v < cy):
@@ -149,8 +145,8 @@ class PointCloudROI(object):
                 axes_up_center = (20, 1)
                 axes_down_center = (20, 1)
             else:
-                axes_up_center = (20, axes_up[1] * 20 / axes_up[0])
-                axes_down_center = (20, axes_down[1] * 20 / axes_down[0])
+                axes_up_center = (20, int(round(axes_up[1] * 20.0 / axes_up[0])))
+                axes_down_center = (20, int(round(axes_down[1] * 20.0 / axes_down[0])))
 
             # upper center
             cv2.ellipse(image, (self._center_u, min(center_up_v, self._center_v)),
@@ -186,8 +182,8 @@ class PointCloudROI(object):
             _vmin = int(round(np.min(v)))
             _vmax = int(round(np.max(v)))
 
-            self._center_u = _umin + (_umax - _umin) / 2
-            self._center_v = _vmin + (_vmax - _vmin) / 2
+            self._center_u = int(_umin + (_umax - _umin) // 2)
+            self._center_v = int(_vmin + (_vmax - _vmin) // 2)
 
             # Compute cylinders
             data = R * data + t
@@ -201,11 +197,12 @@ class PointCloudROI(object):
 
             # Visualization
             v_ = np.array(v.T)
+            split = len(v_) // 2
 
             # Lower cylinder base
-            a = v_[:(len(v_) / 2)]
+            a = v_[:split]
             # Upper cylinder base
-            b = v_[(len(v_) / 2):]
+            b = v_[split:]
 
             self._lower_vmin = int(round(np.max(a)))
             self._lower_vmax = int(round(np.min(a)))

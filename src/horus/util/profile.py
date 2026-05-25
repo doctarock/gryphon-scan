@@ -10,7 +10,7 @@ __license__ = 'GNU General Public License v2 http://www.gnu.org/licenses/gpl2.ht
 import os
 import math
 import sys
-import collections
+import collections.abc
 import json
 import types
 import numpy as np
@@ -21,9 +21,16 @@ logger = logging.getLogger(__name__)
 
 from horus.util import resources, system
 
+# Python 2/3 compatibility
+try:
+    unicode
+except NameError:
+    # Python 3
+    unicode = str
+
 
 @Singleton
-class Settings(collections.MutableMapping):
+class Settings(collections.abc.MutableMapping):
 
     def __init__(self):
         self._settings_dict = dict()
@@ -89,15 +96,15 @@ class Settings(collections.MutableMapping):
         #    return
         setting_type = self.get_setting(key)._type
         try:
-            if setting_type == types.BooleanType:
+            if setting_type == bool:
                 value = bool(value)
-            elif setting_type == types.IntType:
+            elif setting_type == int:
                 value = int(value)
-            elif setting_type == types.FloatType:
+            elif setting_type == float:
                 value = float(value)
-            elif setting_type == types.UnicodeType:
-                value = unicode(value)
-            elif setting_type == types.ListType:
+            elif setting_type == str:
+                value = str(value)
+            elif setting_type == list:
                 value = value
             elif setting_type == np.ndarray:
                 value = np.asarray(value)
@@ -691,12 +698,12 @@ class Settings(collections.MutableMapping):
                     int, 300, min_value=0, max_value=350))
         self._add_setting(
             Setting('roi_height', _('Height (mm)'), 'profile_settings',
-                    int, 400, min_value=0, max_value=350))
+                    int, 300, min_value=0, max_value=350))
 
         # ----------- Point cloud color ----------
         self._add_setting(
-            Setting('texture_mode', _('Texture'), 'profile_settings', 
-                    unicode, u'Texture',
+            Setting('texture_mode', _('Texture'), 'profile_settings',
+                    str, u'Flat color',
                     possible_values=(u'Flat color', u'Multi color', u'Capture', u'Laser BG')))
 
         self._add_setting(
@@ -755,10 +762,10 @@ class Settings(collections.MutableMapping):
         _('Rectangular')
         self._add_setting(
             Setting('machine_shape', _('Machine shape'), 'machine_settings',
-                    unicode, u'Circular', possible_values=(u'Circular', u'Rectangular')))
+                    str, u'Circular', possible_values=(u'Circular', u'Rectangular')))
         self._add_setting(
             Setting('machine_model_path', _('Machine model'), 'machine_settings',
-                    unicode, unicode(resources.get_path_for_mesh('Gryphon_platform.stl')))) # ciclop_platform.stl
+                    str, str(resources.get_path_for_mesh('Gryphon_platform.stl')))) # ciclop_platform.stl
         self._add_setting(
             Setting('machine_model_diameter', _('Machine model diameter (-1 dont scale; 0 auto scale)'), 'machine_settings', int, 304))
         self._add_setting(
@@ -1025,7 +1032,7 @@ def get_size_polygons(size, machine_shape):
     if machine_shape == 'Circular':
         circle = []
         steps = 32
-        for n in xrange(0, steps):
+        for n in range(0, steps):
             circle.append([math.cos(float(n) / steps * 2 * math.pi) * size[0] / 2,
                            math.sin(float(n) / steps * 2 * math.pi) * size[1] / 2])
         ret.append(np.array(circle, np.float32))

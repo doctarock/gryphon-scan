@@ -71,4 +71,4 @@ def release(cfstring):
 
 if __name__ == '__main__':
     cf_pointer = CFSTR("THIS is a Test")
-    print cfstring_to_string(cf_pointer)
+    print(cfstring_to_string(cf_pointer))

@@ -6,9 +6,13 @@ __copyright__ = 'Copyright (C) 2014-2016 Mundo Reader S.L.'
 __license__ = 'GNU General Public License v2 http://www.gnu.org/licenses/gpl2.html'
 
 import numpy as np
+import logging
+import cv2
 
 from horus import Singleton
 from horus.engine.calibration.calibration import Calibration, CalibrationCancel
+
+logger = logging.getLogger(__name__)
 
 
 class PatternNotDetected(Exception):
@@ -100,7 +104,7 @@ class Autocheck(Calibration):
             self._progress_callback(0)
 
         # Capture data
-        for i in xrange(0, 360, scan_step):
+        for i in range(0, 360, scan_step):
             self.current_angle = i
             if not self._is_calibrating:
                 raise CalibrationCancel()
@@ -123,34 +127,62 @@ class Autocheck(Calibration):
         max_x = max(patterns_detected.values())
         max_i = [key for key, value in patterns_detected.items() if value == max_x][0]
         min_v = max_x
-        for i in xrange(max_i, max_i + 360, scan_step):
+        for i in range(max_i, max_i + 360, scan_step):
             if i % 360 in patterns_detected:
                 v = patterns_detected[i % 360]
                 patterns_sorted[i] = v
                 if v <= min_v:
                     min_v = v
                 else:
-                    raise WrongMotorDirection()
+                    logger.warning(
+                        "Motor direction autocheck was inconclusive; continuing. "
+                        "Detected pattern angles: {0}".format(
+                            sorted(patterns_detected.keys())))
+                    break
 
         # Move to nearest position
-        x = np.array(patterns_sorted.keys())
-        y = np.array(patterns_sorted.values())
-        A = np.vstack([x, np.ones(len(x))]).T
-        m, c = np.linalg.lstsq(A, y)[0]
-        pos = -c / m % 360
-        if pos > 180:
-            pos = pos - 360
-        self.driver.board.motor_move(pos)
+        if len(patterns_sorted) >= 2:
+            x = np.array(list(patterns_sorted.keys()))
+            y = np.array(list(patterns_sorted.values()))
+            A = np.vstack([x, np.ones(len(x))]).T
+            m, c = np.linalg.lstsq(A, y, rcond=None)[0]
+            if m != 0:
+                pos = -c / m % 360
+                if pos > 180:
+                    pos = pos - 360
+                self.driver.board.motor_move(pos)
 
     def check_lasers(self):
         image = self.image_capture.capture_pattern()
         corners = self.image_detection.detect_corners(image)
 #        self.image_capture.flush_laser()
-        for i in xrange(2):
+        for i in range(2):
             if not self._is_calibrating:
                 raise CalibrationCancel()
             image = self.image_capture.capture_laser(i)[0]
-            image = self.image_detection.pattern_mask(image, corners)
-            lines = self.laser_segmentation.compute_hough_lines(image)
-            if lines is None:
+            if corners is not None:
+                image = self.image_detection.pattern_mask(image, corners)
+
+            segmented = self.laser_segmentation.compute_line_segmentation(image)
+            pixels = 0
+            rows = 0
+            lines = None
+            if segmented is not None:
+                pixels = int(np.count_nonzero(segmented))
+                rows = int(np.count_nonzero(segmented.sum(axis=1)))
+                hough_threshold = min(120, max(30, rows // 2))
+                lines = cv2.HoughLines(segmented, 1, np.pi / 180, hough_threshold)
+
+            logger.info(
+                "Autocheck laser {0}: segmented pixels={1}, rows={2}, "
+                "hough={3}".format(i, pixels, rows, lines is not None))
+
+            # The original 120-vote Hough-only check rejects short but valid
+            # laser stripes. Triangulation only needs a usable segmented line.
+            if lines is None and (pixels < 40 or rows < 20):
+                if self.calibration_data.check_lasers_calibration():
+                    logger.warning(
+                        "Autocheck laser {0} was weak, but saved laser "
+                        "calibration exists; continuing.".format(i))
+                    continue
                 raise LaserNotDetected()

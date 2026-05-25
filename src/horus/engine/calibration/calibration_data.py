@@ -6,7 +6,7 @@ __copyright__ = 'Copyright (C) 2014-2016 Mundo Reader S.L.'
 __license__ = 'GNU General Public License v2 http://www.gnu.org/licenses/gpl2.html'
 
 
-import md5
+import hashlib
 import cv2
 import numpy as np
 
@@ -26,6 +26,8 @@ class LaserPlane(object):
 
     def is_empty(self):
         if self.distance is None or self.normal is None:
+            return True
+        if not np.isfinite(self.distance) or not np.all(np.isfinite(self.normal)):
             return True
         if self.distance == 0.0 or np.all(self.normal == 0.0):
             return True
@@ -133,9 +135,9 @@ class CalibrationData(object):
             self._dist_camera_matrix, self._roi = cv2.getOptimalNewCameraMatrix(
                 self._camera_matrix, self._distortion_vector,
                 (int(self.width), int(self.height)), alpha=1)
-            self._md5_hash = md5.new()
-            self._md5_hash.update(self._camera_matrix)
-            self._md5_hash.update(self._distortion_vector)
+            self._md5_hash = hashlib.md5()
+            self._md5_hash.update(self._camera_matrix.tobytes() if hasattr(self._camera_matrix, 'tobytes') else self._camera_matrix)
+            self._md5_hash.update(self._distortion_vector.tobytes() if hasattr(self._distortion_vector, 'tobytes') else self._distortion_vector)
             self._md5_hash = self._md5_hash.hexdigest()
 
     def _compute_weight_matrix(self):
@@ -144,6 +146,21 @@ class CalibrationData(object):
 
     def check_camera_calibration(self):
         if self.camera_matrix is None or self.distortion_vector is None:
+            return False
+        if not np.all(np.isfinite(self.camera_matrix)) or \
+           not np.all(np.isfinite(self.distortion_vector)):
+            return False
+        if self.camera_matrix.shape != (3, 3):
+            return False
+        fx = self.camera_matrix[0][0]
+        fy = self.camera_matrix[1][1]
+        cx = self.camera_matrix[0][2]
+        cy = self.camera_matrix[1][2]
+        if fx <= 0 or fy <= 0:
+            return False
+        if self.width > 0 and (cx < 0 or cx >= self.width):
+            return False
+        if self.height > 0 and (cy < 0 or cy >= self.height):
             return False
         return True
 
@@ -155,6 +172,9 @@ class CalibrationData(object):
 
     def check_platform_calibration(self):
         if self.platform_rotation is None or self.platform_translation is None:
+            return False
+        if not np.all(np.isfinite(self.platform_rotation)) or \
+           not np.all(np.isfinite(self.platform_translation)):
             return False
         if self._is_zero(self.platform_rotation) or self._is_zero(self.platform_translation):
             return False

@@ -118,7 +118,7 @@ class CameraIntrinsics(Calibration):
             '''
         if ret:
             # Compute calibration error
-            for i in xrange(len(self.object_points)):
+            for i in range(len(self.object_points)):
                 imgpoints2, _ = cv2.projectPoints(
                     self.object_points[i], rvecs[i], tvecs[i], cmat, dvec)
                 error += cv2.norm(self.image_points[i], imgpoints2, cv2.NORM_L2) / len(imgpoints2)

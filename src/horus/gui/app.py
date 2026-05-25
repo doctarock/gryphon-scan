@@ -65,11 +65,10 @@ class HorusApp(wx.App):
         self.SetTopWindow(self.main_window)
         self.main_window.Show()
 
-        if profile.settings['show_welcome']:
-            # Create welcome window
-            WelcomeDialog(self.main_window)
-
         set_full_screen_capable(self.main_window)
+
+        if profile.settings['show_welcome']:
+            wx.CallAfter(WelcomeDialog, self.main_window)
 
         if sys.is_darwin():
             wx.CallAfter(self.stupid_mac_os_workaround)

@@ -57,7 +57,7 @@ class MainWindow(wx.Frame):
         ws, hs = self.GetSize()
         x, y, w, h = wx.Display(0).GetGeometry()
         self.SetMinSize((600, 450))
-        self.SetPosition((x + (w - ws) / 2., y + (h - hs) / 2.))
+        self.SetPosition((int(x + (w - ws) / 2), int(y + (h - hs) / 2)))
         self.SetIcon(wx.Icon(resources.get_path_for_image("horus.ico"), wx.BITMAP_TYPE_ICO))
 
         self.Bind(wx.EVT_CLOSE, self.on_close)
@@ -132,7 +132,7 @@ class MainWindow(wx.Frame):
         self.menu_scanning_panel = self.menu_scanning.AppendCheckItem(wx.NewId(), _("Panel"))
         self.menu_scanning_video = self.menu_scanning.AppendCheckItem(wx.NewId(), _("Video"))
         self.menu_scanning_scene = self.menu_scanning.AppendCheckItem(wx.NewId(), _("Scene"))
-        self.menu_view.AppendMenu(wx.NewId(), _("Scanning"), self.menu_scanning)
+        self.menu_view.Append(wx.NewId(), _("Scanning"), self.menu_scanning)
         self.menu_mode_advanced = self.menu_view.AppendCheckItem(wx.NewId(), _("Advanced mode"))
         self.menu_hide_help = self.menu_view.AppendCheckItem(wx.NewId(), _("Hide directions"))
         self.menu_bar.Append(self.menu_view, _("View"))
@@ -326,13 +326,13 @@ class MainWindow(wx.Frame):
             self.toolbar.toolbar_connect.Enable()
             self.toolbar.toolbar_control.Enable()
             self.toolbar.combo.Enable()
-            for i in xrange(self.menu_bar.GetMenuCount()):
+            for i in range(self.menu_bar.GetMenuCount()):
                 self.menu_bar.EnableTop(i, True)
         else:
             self.toolbar.toolbar_connect.Disable()
             self.toolbar.toolbar_control.Disable()
             self.toolbar.combo.Disable()
-            for i in xrange(self.menu_bar.GetMenuCount()):
+            for i in range(self.menu_bar.GetMenuCount()):
                 self.menu_bar.EnableTop(i, False)
 
     def append_last_file(self, last_file):
@@ -469,18 +469,18 @@ class MainWindow(wx.Frame):
         self.wait_cursor = wx.BusyCursor()
         self.toolbar.combo.SetValue(name)
         if sys.is_windows():
-            for key, wb in self.workbench.iteritems():
+            for key, wb in self.workbench.items():
                 if wb.name == name:
                     wb.Show()
                     profile.settings['workbench'] = key
-            for key, wb in self.workbench.iteritems():
+            for key, wb in self.workbench.items():
                 if wb.name != name:
                     wb.Hide()
         else:
-            for key, wb in self.workbench.iteritems():
+            for key, wb in self.workbench.items():
                 if wb.name != name:
                     wb.Hide()
-            for key, wb in self.workbench.iteritems():
+            for key, wb in self.workbench.items():
                 if wb.name == name:
                     wb.Show()
                     profile.settings['workbench'] = key
@@ -489,11 +489,9 @@ class MainWindow(wx.Frame):
         self.menu_file.Enable(self.menu_save_model.GetId(), is_scan)
         self.menu_file.Enable(self.menu_clear_model.GetId(), is_scan)
         self.toolbar.scanning_mode(is_scan)
-        profile.settings.save_settings()
         self.Layout()
 
         del self.wait_cursor
-        gc.collect()
 
     def on_about(self, event):
         info = wx.AboutDialogInfo()
@@ -568,7 +566,7 @@ class MainWindow(wx.Frame):
         dlg.Destroy()
 
     def update_profile_to_all_controls(self):
-        for _, w in self.workbench.iteritems():
+        for _, w in self.workbench.items():
             w.update_controls()
         self.workbench[profile.settings['workbench']].update_controls()
 
@@ -624,7 +622,7 @@ class MainWindow(wx.Frame):
         current_video_id = profile.settings['camera_id']
         if len(video_list) > 0:
             if current_video_id not in video_list:
-                profile.settings['camera_id'] = unicode(video_list[0])
+                profile.settings['camera_id'] = str(video_list[0])
 
         if len(profile.settings['camera_id']):
             driver.camera.camera_id = int(profile.settings['camera_id'][-1:])

@@ -49,11 +49,11 @@ class MainToolbar(wx.Panel):
         self.on_disconnect_callback = on_disconnect_callback
 
         # Elements
-        self.connect_tool = self.toolbar_connect.AddLabelTool(
+        self.connect_tool = self.toolbar_connect.AddTool(
             wx.NewId(), _("Connect"),
             wx.Bitmap(resources.get_path_for_image("connect.png")), shortHelp=_("Connect"))
 
-        self.disconnect_tool = self.toolbar_connect.AddLabelTool(
+        self.disconnect_tool = self.toolbar_connect.AddTool(
             wx.NewId(), _("Disconnect"),
             wx.Bitmap(resources.get_path_for_image("disconnect.png")), shortHelp=_("Disconnect"))
 
@@ -69,20 +69,20 @@ class MainToolbar(wx.Panel):
 
         # ========= Control toolbar ========
         # Elements
-        self.r_left_tool = self.toolbar_control.AddLabelTool(
+        self.r_left_tool = self.toolbar_control.AddTool(
             wx.NewId(), _("Rotate left"),
-            wx.Bitmap(resources.get_path_for_image("baseline_rotate_left_black_24dp.png")), 
+            wx.Bitmap(resources.get_path_for_image("baseline_rotate_left_black_24dp.png")),
             shortHelp=_("Rotate left"))
 
-        self.r_right_tool = self.toolbar_control.AddLabelTool(
+        self.r_right_tool = self.toolbar_control.AddTool(
             wx.NewId(), _("Rotate right"),
             wx.Bitmap(resources.get_path_for_image("baseline_rotate_right_black_24dp.png")), shortHelp=_("Rotate right"))
 
         Laser_On_Bitmap = wx.Bitmap(resources.get_path_for_image("baseline_brightness_7_black_24dp.png"))
         Laser_Off_Bitmap = wx.Bitmap(resources.get_path_for_image("baseline_brightness_5_black_24dp.png"))
 
-        self.l1_tool = self.toolbar_control.AddCheckTool(wx.NewId(), Laser_On_Bitmap)
-        self.l2_tool = self.toolbar_control.AddCheckTool(wx.NewId(), Laser_On_Bitmap)
+        self.l1_tool = self.toolbar_control.AddCheckTool(wx.NewId(), _("Laser 1"), Laser_On_Bitmap)
+        self.l2_tool = self.toolbar_control.AddCheckTool(wx.NewId(), _("Laser 2"), Laser_On_Bitmap)
 
         self.toolbar_control.Realize()
 
@@ -102,7 +102,7 @@ class MainToolbar(wx.Panel):
         current_video_id = profile.settings['camera_id']
         if len(video_list) > 0:
             if current_video_id not in video_list:
-                profile.settings['camera_id'] = unicode(video_list[0])
+                profile.settings['camera_id'] = str(video_list[0])
                 driver.camera.camera_id = int(profile.settings['camera_id'][-1:])
 
         driver.set_callbacks(lambda: wx.CallAfter(self.before_connect),

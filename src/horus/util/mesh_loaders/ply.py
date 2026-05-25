@@ -122,11 +122,11 @@ def _load_binary_metadata(mesh, stream, dtype, count):
     data = np.fromfile(stream, dtype=dtype, count=count)
 
     mesh.metadata = pickle.loads(data.view('S{0}'.format(count))[0])
-    print mesh.metadata
+    print(mesh.metadata)
 
 # ======================================
 def _load_element(mesh, stream, format, element, dtype, count):
-    print "Load elements: '{0}' x {1} format {2} @ {3}".format(element,count,format,stream.tell())
+    print("Load elements: '{0}' x {1} format {2} @ {3}".format(element,count,format,stream.tell()))
                                                                       
     if len(dtype)<=0 or \
         element is None or \
@@ -135,7 +135,7 @@ def _load_element(mesh, stream, format, element, dtype, count):
         return
 
     dtype = np.dtype(dtype)
-    print "   Types: {0}".format(dtype.names)
+    print("   Types: {0}".format(dtype.names))
 
     if format == 'ascii':
         if element == 'vertex':
@@ -143,7 +143,7 @@ def _load_element(mesh, stream, format, element, dtype, count):
         elif element == 'metadata':
             _load_ascii_metadata(mesh, stream, dtype, count)
         else:
-            for i in xrange(count):
+            for i in range(count):
                 stream.readline()
 
     elif format == 'binary_big_endian' or format == 'binary_little_endian':
@@ -219,7 +219,7 @@ def load_scene(filename):
                         # property list <numerical-type size.type> <numerical-type element.type> <property-name>
                         logger.error("PLY load Error: 'list' not supported.")
                         if format == 'ascii':
-                            for i in xrange(count):
+                            for i in range(count):
                                 f.readline()
                         else:
                             return obj
@@ -240,13 +240,17 @@ def save_scene(filename, _object):
         save_scene_stream(f, _object)
 
 
+def _write_text(stream, text):
+    stream.write(text.encode('ascii'))
+
+
 def save_scene_stream(stream, _object):
     if isinstance(_object, model.Model):
         m = _object._mesh
     elif isinstance(_object, model.Mesh):
         m = _object
     else:
-        print "Unknown object type '{0}'. Unable to save".format(type(_object))
+        print("Unknown object type '{0}'. Unable to save".format(type(_object)))
         return
 
     binary = True
@@ -278,18 +282,18 @@ def save_scene_stream(stream, _object):
                 frame += "element metadata 1\n" # single line of data
                 frame += "property uchar data\n"
         else:
-            print "No metadata to save"
+            print("No metadata to save")
 
         frame += "element face 0\n"
         frame += "property list uchar int vertex_indices\n"
 
         frame += "end_header\n"
 
-        stream.write(frame)
+        _write_text(stream, frame)
 
         if m.vertex_count > 0:
             if binary:
-                for i in xrange(m.vertex_count):
+                for i in range(m.vertex_count):
                     stream.write(struct.pack("<fffBBBBif",
                                              m.vertexes[i, 0], m.vertexes[i, 1], m.vertexes[i, 2],
                                              m.colors[i, 0], m.colors[i, 1], m.colors[i, 2],
@@ -297,10 +301,10 @@ def save_scene_stream(stream, _object):
                 if m.metadata is not None:
                     stream.write(metadata)
             else:
-                for i in xrange(m.vertex_count):
-                    stream.write("{0} {1} {2} {3} {4} {5} {6} {7} {8}\n".format(
-                                 m.vertexes[i, 0], m.vertexes[i, 1], m.vertexes[i, 2],
-                                 m.colors[i, 0], m.colors[i, 1], m.colors[i, 2]),
-                                 m.vertexes_meta[i][0], m.vertexes_meta[i][1], m.vertexes_meta[i][2])
+                for i in range(m.vertex_count):
+                    _write_text(stream, "{0} {1} {2} {3} {4} {5} {6} {7} {8}\n".format(
+                                m.vertexes[i, 0], m.vertexes[i, 1], m.vertexes[i, 2],
+                                m.colors[i, 0], m.colors[i, 1], m.colors[i, 2],
+                                m.vertexes_meta[i][0], m.vertexes_meta[i][1], m.vertexes_meta[i][2]))
                 if m.metadata is not None:
-                    stream.write("{0}\n".format(metadata))
+                    _write_text(stream, "{0}\n".format(metadata))

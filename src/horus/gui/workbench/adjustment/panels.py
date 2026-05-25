@@ -108,7 +108,7 @@ class ScanCapturePanel(ExpandablePanel):
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(buttons_box.left_button, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL)
         hbox.AddStretchSpacer()
-        hbox.Add(buttons_box.right_button, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        hbox.Add(buttons_box.right_button, 0, wx.ALIGN_CENTER_VERTICAL)
         buttons_box.SetSizer(hbox)
 
         control.Layout()
@@ -418,7 +418,7 @@ class CalibrationCapturePanel(ExpandablePanel):
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(buttons_box.left_button, 0, wx.ALIGN_LEFT | wx.ALIGN_CENTER_VERTICAL)
         hbox.AddStretchSpacer()
-        hbox.Add(buttons_box.right_button, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL)
+        hbox.Add(buttons_box.right_button, 0, wx.ALIGN_CENTER_VERTICAL)
         buttons_box.SetSizer(hbox)
 
         control.Layout()
